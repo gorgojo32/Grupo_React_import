@@ -1,6 +1,8 @@
 import * as React from 'react';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import WidgetsTwoToneIcon from '@mui/icons-material/WidgetsTwoTone';
+import ClassSharpIcon from '@mui/icons-material/ClassSharp';
+import LocalCafeTwoToneIcon from '@mui/icons-material/LocalCafeTwoTone';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { Outlet } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 import type { Navigation } from '@toolpad/core/AppProvider';
@@ -11,13 +13,23 @@ const NAVIGATION: Navigation = [
     title: 'Main items',
   },
   {
-    title: 'Dashboard',
-    icon: <DashboardIcon />,
+    title: 'menu',
+    icon: <WidgetsTwoToneIcon/>
   },
   {
-    segment: 'orders',
-    title: 'Orders',
-    icon: <ShoppingCartIcon />,
+    segment: 'categoria',
+    title: 'Categoria',
+    icon: <ClassSharpIcon/>,
+  },
+  {
+    segment: 'producto',
+    title: 'Producto',
+    icon: <LocalCafeTwoToneIcon/>,
+  },
+  {
+    segment: 'usuario',
+    title: 'usuario',
+    icon: <AccountCircleIcon/>
   },
 ];
 
