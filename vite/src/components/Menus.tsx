@@ -17,20 +17,20 @@ const Menus = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // En un entorno real, aquí consultaríamos al middleware
+       
         const response = await fetch(`http://localhost:8000/api/menu/${activeSection}`);
         const result = await response.json();
         setData(result);
       } catch (error) {
         console.error("Error al obtener datos:", error);
-        // Establecer datos de respaldo en caso de error
+        
         setData({});
       } finally {
         setLoading(false);
       }
     };
 
-    // Simulamos un retardo para mostrar el efecto de carga
+   
     const timer = setTimeout(() => {
       fetchData();
     }, 500);
@@ -39,8 +39,8 @@ const Menus = () => {
   }, [activeSection]);
 
   const handleSectionChange = (section: React.SetStateAction<string>) => {
-    // Llamada al middleware antes de cambiar la sección
-    // En un sistema real, podríamos registrar el cambio de sección
+
+    
     fetch('http://localhost:8000/api/middleware/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -8,10 +8,10 @@ import StoreIcon from '@mui/icons-material/Store';
  * @returns {JSX.Element} - Contenido de la segunda opción
  */
 const MenuOptionTwo = ({ data = {} }) => {
-  // Usar los datos recibidos o valores predeterminados
+
   const { title = "Nuestras Tiendas", locations = [] } = data;
   
-  // Ubicaciones de ejemplo si no se proporcionan datos
+
   const defaultLocations = [
     { 
       id: 1, 

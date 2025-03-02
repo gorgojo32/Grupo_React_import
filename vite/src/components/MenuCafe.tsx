@@ -8,10 +8,11 @@ import CoffeeIcon from '@mui/icons-material/Coffee';
  * @returns {JSX.Element} - Contenido de la primera opción
  */
 const MenuOptionOne = ({ data = {} }) => {
-  // Usar los datos recibidos o valores predeterminados
+  
+    
   const { title = "Productos Destacados", items = [] } = data;
   
-  // Productos de ejemplo si no se proporcionan datos
+  
   const defaultItems = [
     { id: 1, name: "Café Colombiano", description: "Café de origen único con notas de chocolate y caramelo", price: "$3.50" },
     { id: 2, name: "Frappuccino", description: "Bebida helada con base de café y crema batida", price: "$4.75" },

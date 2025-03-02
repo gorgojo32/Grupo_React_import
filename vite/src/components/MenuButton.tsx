@@ -21,7 +21,7 @@ const MenuButton = ({ label, active, onClick }: string): JSX.Element => {
         transition: 'all 0.3s ease',
         '&:hover': {
           backgroundColor: 'transparent',
-          color: '#006241', // Color verde Starbucks
+          color: '#006241',
           transform: 'translateY(-2px)',
           '&::after': {
             width: '100%',
@@ -34,7 +34,7 @@ const MenuButton = ({ label, active, onClick }: string): JSX.Element => {
           left: 0,
           width: active ? '100%' : '0%',
           height: '3px',
-          backgroundColor: '#006241', // Color verde Starbucks
+          backgroundColor: '#006241', 
           transition: 'width 0.3s ease-in-out',
           borderRadius: '3px 3px 0 0',
         },
