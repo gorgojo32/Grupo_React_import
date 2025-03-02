@@ -6,6 +6,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { Outlet } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 import type { Navigation } from '@toolpad/core/AppProvider';
+import StarBucks from '../public/StarBucks.png';
 
 const NAVIGATION: Navigation = [
   {
@@ -34,7 +35,8 @@ const NAVIGATION: Navigation = [
 ];
 
 const BRANDING = {
-  title: 'My Toolpad Core App',
+  title: 'Starbucks',
+  logo: <img src={StarBucks} alt="Starbucks logo" />,
 };
 
 export default function App() {
