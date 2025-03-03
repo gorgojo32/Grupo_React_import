@@ -42,7 +42,7 @@ export default function Producto() {
         {
             field: "imagen",
             headerName: "Imagen",
-            width: 200,
+            width: 100,
             renderCell: (params) => (
                 <img
                     src={`../../public/Starbucks/${params.value}`}
@@ -52,9 +52,9 @@ export default function Producto() {
             )
         },
         { field: "nombre", headerName: "Nombre del Producto", width: 146 },
-        { field: "descripcion", headerName: "Descripcion", width: 146 },
-        { field: "precio", headerName: "Precio", width: 200 },
-        { field: "costo", headerName: "Money", width: 150 },
+        { field: "descripcion", headerName: "Descripcion", width: 400},
+        { field: "precio", headerName: "Precio", width: 80 },
+        { field: "costo", headerName: "Money", width: 80 },
         { field: "stock", headerName: "Stock", width: 100 }
 
     ]
