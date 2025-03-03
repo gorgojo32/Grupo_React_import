@@ -11,10 +11,10 @@ import StarBucks from '../public/StarBucks.png';
 const NAVIGATION: Navigation = [
   {
     kind: 'header',
-    title: 'Main items',
+    title: 'Ítems principales',
   },
   {
-    title: 'menu',
+    title: 'Menu',
     icon: <WidgetsTwoToneIcon/>
   },
   {

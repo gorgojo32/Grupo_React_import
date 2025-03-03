@@ -19,6 +19,8 @@ const Menus = () => {
       try {
        
         const response = await fetch(`http://localhost:8000/api/menu/${activeSection}`);
+        if (!response) throw new Error("Respuesta vacía del servidor");
+
         const result = await response.json();
         setData(result);
       } catch (error) {

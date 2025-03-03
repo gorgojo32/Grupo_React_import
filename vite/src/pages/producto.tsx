@@ -111,18 +111,18 @@ export default function Producto() {
     return (
         <>
             <h1>Productos de StarBucks</h1>
-          
 
             <Grid2 container spacing={2} marginTop={5}>
                 <Grid2 size={12}>
-                    <DinamicTable rows={dataUsers} columns={columns} onDelete={handleDelete} onEdit={handleEdit} />
+                    <DinamicTable 
+                    rows={dataUsers} 
+                    columns={columns} 
+                    onDelete={handleDelete} 
+                    onEdit={handleEdit} />
 
                 </Grid2>
 
             </Grid2>
-
-
-
 
         </>
     )
