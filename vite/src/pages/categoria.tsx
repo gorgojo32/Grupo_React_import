@@ -4,6 +4,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import DinamicTableCtga from '../components/DinamicTableCtga';
 import DeleteIcon from '@mui/icons-material/Delete';
 
+
 interface Categoria {
     id_categoria: number;
     tipoProducto: string;
