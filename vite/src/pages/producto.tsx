@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button, Grid2, IconButton, Stack, ButtonGroup } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import DinamicTable from '../components/DinamicTable';
+import DinamicTable from '../components/DinamicTables/DinamicTable';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 

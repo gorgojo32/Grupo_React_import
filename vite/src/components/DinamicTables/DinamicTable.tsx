@@ -4,7 +4,7 @@ import { Paper, IconButton } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ModalEdicionProducto from './ModalProducto';
+import ModalEdicionProducto from '../Modal/ModalProducto';
 
 interface DinamicTableProps {
     rows: any[];

@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { Button, Grid2, IconButton, Stack, ButtonGroup } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import DinamicTableCtga from '../components/DinamicTableCtga';
+import DinamicTableCtga from '../components/DinamicTables/DinamicTableCtga';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 
 interface Categoria {
-    id_categoria: number;
+    id_categoria?: number;
     tipoProducto: string;
     tipoDescripcion: string;
     estado: number;
@@ -41,10 +41,10 @@ export default function Categorias() {
         console.log("Datos a enviar:", row);
         try {
             const dataToUpdate = {
-                tipoProd: row.tipoProducto,
-                tipoDescrip: row.tipoDescripcion,
+                tipoProducto: row.tipoProducto,
+                tipoDescripcion: row.tipoDescripcion,
                 estado: row.estado,
-                fecha: row.fecha_creacion,
+                fecha_creacion: row.fecha_creacion,
             };
 
             console.log("Data Formateada", dataToUpdate);
@@ -60,8 +60,10 @@ export default function Categorias() {
             const data = await response.json();
 
             if (data.success) {
-                const updatedCategories = await fetch('http://localhost:8000/categorias').then(res => res.json());
-                setDataCategorias(updatedCategories.data.map((row: any) => ({ ...row, id: row.id_categoria })));
+                const updatedCategories = await fetch('http://localhost:8000/categorias').then(res => res.json())
+                .then(data => setDataCategorias(data.data.map((row: { id_categoria: any}) => ({ ...row, id: row.id_categoria }))));
+                alert("paso consulta");
+                //setDataCategorias(updatedCategories.data.map((row: any) => ({ ...row, id: row.id_categoria })));
                 alert("Categoria actualizada correctamente");
             } else {
                 alert("Error al actualizar la Categoria: " + data.msg);

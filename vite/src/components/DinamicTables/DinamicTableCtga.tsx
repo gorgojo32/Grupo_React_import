@@ -4,7 +4,7 @@ import { Paper, IconButton } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ModalEdicionProducto from './ModalProducto';
+import ModalEdicionCategoria from '../Modal/mEditarCtga';
 
 interface DinamicTableProps {
     rows: any[];
@@ -17,20 +17,20 @@ const DinamicTableCtga: React.FC<DinamicTableProps> = ({ rows, columns, onDelete
     const [tableRows, setTableRows] = React.useState<any[]>([]);
     
     const [modalOpen, setModalOpen] = React.useState(false);
-    const [productoSeleccionado, setProductoSeleccionado] = React.useState(null);
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = React.useState(null);
         
     React.useEffect(() => {
         setTableRows(rows);
     }, [rows])
     
     const handleOpenModal = (row: any) => {
-        setProductoSeleccionado(row);
+        setCategoriaSeleccionada(row);
         setModalOpen(true);
     };
     
     const handleCloseModal = () => {
         setModalOpen(false);
-        setProductoSeleccionado(null);
+        setCategoriaSeleccionada(null);
     };
     
     const handleGuardarEdicion = (productoEditado: any) => {
@@ -80,10 +80,10 @@ const DinamicTableCtga: React.FC<DinamicTableProps> = ({ rows, columns, onDelete
                 sx={{ border: 0 }}
             />
         </Paper>
-        <ModalEdicionProducto
+        <ModalEdicionCategoria
             open={modalOpen}
             onClose={handleCloseModal}
-            producto={productoSeleccionado}
+            categoria={categoriaSeleccionada}
             onGuardar={handleGuardarEdicion}
         />
         </>
