@@ -12,7 +12,7 @@ interface DinamicTableProps {
     onDelete: (id: number) => void;
     onEdit: (row: any) => void;
 }
-
+///hola
 const DinamicTable: React.FC<DinamicTableProps> = ({ rows, columns, onDelete, onEdit }) => {
     const [tableRows, setTableRows] = React.useState<any[]>([]);
     
