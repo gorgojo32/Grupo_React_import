@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button, Grid2, IconButton, Stack, ButtonGroup } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import DinamicTable from '../components/DinamicTable';
+import DinamicTableCtga from '../components/DinamicTableCtga';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 interface Categoria {
@@ -30,7 +30,7 @@ export default function Categorias() {
             field: "estado",
             headerName: "Estado",
             width: 100,
-            renderCell: (params) => (params.value === 1 ? "Activo" : "Inactivo")
+            renderCell: (params) => (params.value === "1" ? "Activo" : "Inactivo")
         },
 
         { field: "fecha_creacion", headerName: "Fecha de Creación", width: 200 },
@@ -103,7 +103,7 @@ export default function Categorias() {
             <h1>Categorías de Productos</h1>
             <Grid2 container spacing={2} marginTop={5}>
                 <Grid2 size={12}>
-                    <DinamicTable 
+                    <DinamicTableCtga 
                     rows={dataCategorias} 
                     columns={columns} 
                     onDelete={handleDelete} 
