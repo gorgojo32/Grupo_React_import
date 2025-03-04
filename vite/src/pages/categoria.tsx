@@ -41,10 +41,10 @@ export default function Categorias() {
         console.log("Datos a enviar:", row);
         try {
             const dataToUpdate = {
-                tipoProducto: row.tipoProducto,
+                tipoProd:  row.tipoProducto, // Aceptar ambos formatos
                 tipoDescripcion: row.tipoDescripcion,
-                estado: row.estado,
-                fecha_creacion: row.fecha_creacion,
+                estado: Number(row.estado),
+                fecha:  row.fecha_creacion // Aceptar ambos formatos
             };
 
             console.log("Data Formateada", dataToUpdate);

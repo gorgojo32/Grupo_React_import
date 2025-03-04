@@ -6,9 +6,11 @@ import {
   DialogActions, 
   TextField, 
   Button,
-  Box
+  Box,
+  Typography,
+  CircularProgress
 } from '@mui/material';
-
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 interface ModalEdicionProductoProps {
   open: boolean;
@@ -27,7 +29,6 @@ interface ModalEdicionProductoProps {
   onGuardar: (productoEditado: any) => void;
 }
 
-
 interface ProductoEditado {
   id_producto: number | null;
   nombre: string;
@@ -37,6 +38,7 @@ interface ProductoEditado {
   stock: number;
   imagen: string | null;
   id_categoria: number;
+  nuevaImagen?: File | null;
 }
 
 const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({ 
@@ -45,8 +47,6 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
   producto, 
   onGuardar 
 }) => {
-
-
   const [productoEditado, setProductoEditado] = React.useState<ProductoEditado>({
     id_producto: null,
     nombre: '',
@@ -55,9 +55,12 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
     costo: '',
     stock: 0,
     imagen: null,
-    id_categoria: 0
+    id_categoria: 0,
+    nuevaImagen: null
   });
-
+  
+  const [imagenPreview, setImagenPreview] = React.useState<string | null>(null);
+  const [cargandoImagen, setCargandoImagen] = React.useState(false);
 
   React.useEffect(() => {
     if (producto) {
@@ -69,11 +72,14 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
         costo: producto.costo,
         stock: producto.stock,
         imagen: producto.imagen,
-        id_categoria: producto.id_categoria
+        id_categoria: producto.id_categoria,
+        nuevaImagen: null
       });
+      
+      // Resetear la vista previa de la imagen
+      setImagenPreview(null);
     }
   }, [producto]);
-
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProductoEditado({
@@ -81,9 +87,23 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
       [e.target.name]: e.target.value
     });
   };
+  
+  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Crear URL temporal para previsualizar la imagen
+      const fileUrl = URL.createObjectURL(file);
+      setImagenPreview(fileUrl);
+      
+      setProductoEditado({
+        ...productoEditado,
+        nuevaImagen: file
+      });
+    }
+  };
 
- 
   const handleGuardar = () => {
+    
     onGuardar(productoEditado);
     onClose();
   };
@@ -144,16 +164,56 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
             value={productoEditado.stock}
             onChange={handleTextChange}
           />
-          {productoEditado.imagen && (
+          
+          
+          {productoEditado.imagen && !imagenPreview && (
             <Box sx={{ mt: 2 }}>
-              <p>Imagen actual:</p>
+              <Typography variant="subtitle1">Imagen actual:</Typography>
               <img 
-                src={`/public/${productoEditado.imagen}`} 
-                alt={productoEditado.nombre} 
+                src={`../../public/Starbucks/${productoEditado.imagen}`} 
+                alt={productoEditado.nombre || 'Producto'} 
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
               />
             </Box>
           )}
+          
+          {/* Previsualización de nueva imagen */}
+          {imagenPreview && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1">Nueva imagen:</Typography>
+              <img 
+                src={imagenPreview} 
+                alt="Vista previa" 
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+              />
+            </Box>
+          )}
+          
+          {/* Selector de imagen */}
+          <Box sx={{ mt: 2 }}>
+            <Button
+              component="label"
+              variant="contained"
+              startIcon={<CloudUploadIcon />}
+              disabled={cargandoImagen}
+              sx={{ mb: 1 }}
+            >
+              {cargandoImagen ? (
+                <CircularProgress size={24} />
+              ) : (
+                "Seleccionar nueva imagen"
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImagenChange}
+              />
+            </Button>
+            <Typography variant="caption" color="textSecondary">
+              Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB
+            </Typography>
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>

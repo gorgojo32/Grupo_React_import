@@ -4,7 +4,8 @@ import {
   TextField, Button, Box
 } from '@mui/material';
 
-interface Categoria {
+
+interface CategoriaUI {
   id_categoria: number;
   tipoProducto: string;
   tipoDescripcion: string;
@@ -12,15 +13,28 @@ interface Categoria {
   fecha_creacion: string;
 }
 
+interface CategoriaAPI {
+  id_categoria?: number;
+  tipoProducto: string;     
+  tipoDescripcion: string;
+  estado: number;
+  fecha_creacion: string;    
+}
+
 interface ModalEdicionCategoriaProps {
   open: boolean;
   onClose: () => void;
-  categoria: Categoria | null;
-  onGuardar: (categoriaEditada: Categoria) => void;
+  categoria: CategoriaUI | null;
+  onGuardar: (categoriaEditada: CategoriaAPI) => void;
 }
 
-const ModalEdicionCategoria: React.FC<ModalEdicionCategoriaProps> = ({ open, onClose, categoria, onGuardar }) => {
-  const [categoriaEditada, setCategoriaEditada] = React.useState<Categoria>({
+const ModalEdicionCategoria: React.FC<ModalEdicionCategoriaProps> = ({
+  open,
+  onClose,
+  categoria,
+  onGuardar
+}) => {
+  const [categoriaEditada, setCategoriaEditada] = React.useState<CategoriaUI>({
     id_categoria: 0,
     tipoProducto: '',
     tipoDescripcion: '',
@@ -42,9 +56,17 @@ const ModalEdicionCategoria: React.FC<ModalEdicionCategoriaProps> = ({ open, onC
   };
 
   const handleGuardar = () => {
-    onGuardar(categoriaEditada);
+    const categoriaParaAPI: CategoriaAPI = {
+      id_categoria: categoriaEditada.id_categoria,
+      tipoProducto: categoriaEditada.tipoProducto,
+      tipoDescripcion: categoriaEditada.tipoDescripcion,
+      estado: Number(categoriaEditada.estado),
+      fecha_creacion: categoriaEditada.fecha_creacion
+    };
+        
+    onGuardar(categoriaParaAPI);
     onClose();
-  };
+ };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -69,8 +91,9 @@ const ModalEdicionCategoria: React.FC<ModalEdicionCategoriaProps> = ({ open, onC
           />
           <TextField
             name="estado"
-            label="Estado"
+            label="Estado (0 o 1)"
             type="number"
+            inputProps={{ min: 0, max: 1 }}
             fullWidth
             value={categoriaEditada.estado}
             onChange={handleTextChange}
