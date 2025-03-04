@@ -31,7 +31,7 @@ export default function Categorias() {
             field: "estado",
             headerName: "Estado",
             width: 100,
-            renderCell: (params) => (params.value === "1" ? "Activo" : "Inactivo")
+            renderCell: (params) => (params.value === 1 ? "Activo" : "Inactivo")
         },
 
         { field: "fecha_creacion", headerName: "Fecha de Creación", width: 200 },
