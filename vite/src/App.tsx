@@ -29,7 +29,7 @@ const NAVIGATION: Navigation = [
   },
   {
     segment: 'usuario',
-    title: 'usuario',
+    title: "Usuarios",
     icon: <AccountCircleIcon/>
   },
 ];
