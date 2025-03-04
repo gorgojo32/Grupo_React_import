@@ -23,7 +23,11 @@ const BusinessCard = () => {
       </div>
       
       {/* Content with Image */}
-      <div style={{ padding: '16px', display: 'flex' }}>
+      <div style={{ 
+        padding: '16px', 
+        display: 'flex', 
+        backgroundColor: 'white' // Fondo blanco agregado aquí
+      }}>
         {/* Image Column */}
         <div style={{ 
           marginRight: '16px',
