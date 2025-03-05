@@ -177,7 +177,7 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
             </Box>
           )}
           
-          {/* Previsualización de nueva imagen */}
+
           {imagenPreview && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1">Nueva imagen:</Typography>
@@ -189,7 +189,7 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
             </Box>
           )}
           
-          {/* Selector de imagen */}
+     
           <Box sx={{ mt: 2 }}>
             <Button
               component="label"
