@@ -3,7 +3,8 @@ import { Button, Grid2, IconButton, Stack, ButtonGroup } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import DinamicTableCtga from '../components/DinamicTables/DinamicTableCtga';
 import DeleteIcon from '@mui/icons-material/Delete';
-
+import AddIcon from '@mui/icons-material/Add';
+import ModalNuevaCategoria from '../components/Modal/mAgregarCtga';
 
 interface Categoria {
     id_categoria?: number;
@@ -15,12 +16,17 @@ interface Categoria {
 
 export default function Categorias() {
     const [dataCategorias, setDataCategorias] = React.useState<Categoria[]>([]);
+    const [modalAgregarOpen, setModalAgregarOpen] = React.useState(false);
 
-    React.useEffect(() => {
+    const fetchCategorias = () => {
         fetch('http://localhost:8000/categorias')
             .then(response => response.json())
             .then(data => setDataCategorias(data.data.map((row: { id_categoria: any}) => ({ ...row, id: row.id_categoria }))))
             .catch(error => console.error('Error al obtener las Categorías:', error));
+    };
+
+    React.useEffect(() => {
+        fetchCategorias();
     }, []);
 
     const columns: GridColDef[] = [
@@ -33,7 +39,6 @@ export default function Categorias() {
             width: 100,
             renderCell: (params) => (params.value === 1 ? "Activo" : "Inactivo")
         },
-
         { field: "fecha_creacion", headerName: "Fecha de Creación", width: 200 },
     ];
 
@@ -60,10 +65,7 @@ export default function Categorias() {
             const data = await response.json();
 
             if (data.success) {
-                const updatedCategories = await fetch('http://localhost:8000/categorias').then(res => res.json())
-                .then(data => setDataCategorias(data.data.map((row: { id_categoria: any}) => ({ ...row, id: row.id_categoria }))));
-                alert("paso consulta");
-                //setDataCategorias(updatedCategories.data.map((row: any) => ({ ...row, id: row.id_categoria })));
+                fetchCategorias(); // Usar la función reutilizable
                 alert("Categoria actualizada correctamente");
             } else {
                 alert("Error al actualizar la Categoria: " + data.msg);
@@ -100,21 +102,79 @@ export default function Categorias() {
         }
     };
 
+    const handleAgregarCategoria = () => {
+        setModalAgregarOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalAgregarOpen(false);
+    };
+
+    const handleGuardarCategoria = async (nuevaCategoria: Categoria) => {
+        try {
+            // Adaptamos los datos al formato que espera la API
+            const dataToSend = {
+                tipoProducto: nuevaCategoria.tipoProducto,
+                tipoDescripcion: nuevaCategoria.tipoDescripcion,
+                estado: Number(nuevaCategoria.estado),
+                fecha: nuevaCategoria.fecha_creacion
+            };
+
+            console.log("Enviando nueva categoría:", dataToSend);
+
+            const response = await fetch('http://localhost:8000/categorias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                fetchCategorias(); // Recargar las categorías
+                alert("Categoría agregada correctamente");
+            } else {
+                alert("Error al agregar la categoría: " + data.msg);
+            }
+        } catch (error) {
+            console.error("Error al agregar categoría:", error);
+            alert("Error al agregar la categoría");
+        }
+    };
 
     return (
         <>
             <h1>Categorías de Productos</h1>
-            <Grid2 container spacing={2} marginTop={5}>
+            
+            <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<AddIcon />} 
+                onClick={handleAgregarCategoria}
+                sx={{ mb: 2 }}
+            >
+                Agregar Categoría
+            </Button>
+            
+            <Grid2 container spacing={2} marginTop={2}>
                 <Grid2 size={12}>
                     <DinamicTableCtga 
-                    rows={dataCategorias} 
-                    columns={columns} 
-                    onDelete={handleDelete} 
-                    onEdit={handleEdit} />
-
+                        rows={dataCategorias} 
+                        columns={columns} 
+                        onDelete={handleDelete} 
+                        onEdit={handleEdit} 
+                    />
                 </Grid2>
-
             </Grid2>
+
+            {/* Modal para agregar nueva categoría */}
+            <ModalNuevaCategoria 
+                open={modalAgregarOpen}
+                onClose={handleCloseModal}
+                onGuardar={handleGuardarCategoria}
+            />
         </>
     );
 }
