@@ -51,7 +51,7 @@ export default function Producto() {
                     alt={params.row.nombre}
                     style={{ width: 50, height: 50, objectFit: 'contain' }}
                     onError={(e) => {
-                        // Mostrar imagen de reemplazo en caso de error
+                        
                         (e.target as HTMLImageElement).src = '../../public/Starbucks/default.png';
                     }}
                 />
@@ -69,7 +69,7 @@ export default function Producto() {
         console.log("Datos a enviar:", row);
         
         try {
-            // Si hay una nueva imagen, primero la subimos
+            //Imagen
             let nombreImagen = row.imagen;
             
             if (row.nuevaImagen) {
@@ -93,13 +93,13 @@ export default function Producto() {
                 }
             }
             
-            // Luego actualizamos los datos del producto
+            // Luego actualizamos 
             const dataToUpdate = {
                 nombre: row.nombre,
                 descripcion: row.descripcion,
-                precio: parseFloat(row.precio), // Asegurarse de que sea número
-                costo: parseFloat(row.costo),   // Asegurarse de que sea número
-                stock: parseInt(row.stock, 10),  // Asegurarse de que sea entero
+                precio: parseFloat(row.precio), 
+                costo: parseFloat(row.costo),   
+                stock: parseInt(row.stock, 10),  
                 imagen: nombreImagen,
                 id_categoria: parseInt(row.id_categoria, 10)
             };
