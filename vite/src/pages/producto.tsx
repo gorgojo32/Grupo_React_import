@@ -486,7 +486,6 @@ export default function Producto() {
           onDelete={handleDelete}
           onEdit={handleEdit}
           categorias={categorias}
-          title="Catálogo de Productos"
         />
       </Box>
 
