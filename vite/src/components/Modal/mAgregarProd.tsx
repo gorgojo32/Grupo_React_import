@@ -8,31 +8,22 @@ import {
   Button,
   Box,
   Typography,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
-
-
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
-interface ModalEdicionProductoProps {
+
+interface ModalAgregarProductoProps {
   open: boolean;
   onClose: () => void;
-  producto: {
-    id_producto: number | null;
-    nombre: string;
-    descripcion: string;
-    precio: string | number;
-    costo: string | number;
-    stock: number;
-    imagen: string | null;
-    id_categoria: number;
-    tipoProducto?: string;
-  } | null;
-  onGuardar: (productoEditado: any) => void;
+  onGuardar: (nuevoProducto: any) => void;
+  categorias: Array<{id_categoria: number, nombre: string}>;
 }
-
-interface ProductoEditado {
-  id_producto: number | null;
+interface NuevoProducto {
   nombre: string;
   descripcion: string;
   precio: string | number;
@@ -40,56 +31,80 @@ interface ProductoEditado {
   stock: number;
   imagen: string | null;
   id_categoria: number;
-  nuevaImagen?: File | null;
+  nuevaImagen: File | null;
 }
 
-const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({ 
+const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({ 
   open, 
   onClose, 
-  producto, 
-  onGuardar 
+  onGuardar, 
+  categorias = [] 
 }) => {
-  const [productoEditado, setProductoEditado] = React.useState<ProductoEditado>({
-    id_producto: null,
+  const [nuevoProducto, setNuevoProducto] = React.useState<NuevoProducto>({
     nombre: '',
     descripcion: '',
     precio: '',
     costo: '',
     stock: 0,
     imagen: null,
-    id_categoria: 0,
+    id_categoria: 1,
     nuevaImagen: null
   });
   
   const [imagenPreview, setImagenPreview] = React.useState<string | null>(null);
   const [cargandoImagen, setCargandoImagen] = React.useState(false);
+  const [errores, setErrores] = React.useState({
+    nombre: false,
+    precio: false,
+    costo: false,
+    id_categoria: false,
+  });
+
+
 
   React.useEffect(() => {
-    if (producto) {
-      setProductoEditado({
-        id_producto: producto.id_producto,
-        nombre: producto.nombre,
-        descripcion: producto.descripcion,
-        precio: producto.precio,
-        costo: producto.costo,
-        stock: producto.stock,
-        imagen: producto.imagen,
-        id_categoria: producto.id_categoria,
+    if (open) {
+      setNuevoProducto({
+        nombre: '',
+        descripcion: '',
+        precio: '',
+        costo: '',
+        stock: 0,
+        imagen: null,
+        id_categoria: 1,
         nuevaImagen: null
       });
-      
-      // Resetear la vista previa de la imagen
       setImagenPreview(null);
+      setErrores({
+        nombre: false,
+        precio: false,
+        costo: false,
+        id_categoria: false,
+      });
     }
-  }, [producto]);
+  }, [open]);
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProductoEditado({
-      ...productoEditado,
-      [e.target.name]: e.target.value
-    });
+
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+    const { name, value } = e.target as { name?: string; value: unknown };
+    if (name) {
+      setNuevoProducto({
+        ...nuevoProducto,
+        [name]: value
+      });
+      
+
+      if (errores[name as keyof typeof errores]) {
+        setErrores({
+          ...errores,
+          [name]: false
+        });
+      }
+    }
   };
   
+  // Manejar cambios en la imagen
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -97,22 +112,39 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
       const fileUrl = URL.createObjectURL(file);
       setImagenPreview(fileUrl);
       
-      setProductoEditado({
-        ...productoEditado,
-        nuevaImagen: file
+      setNuevoProducto({
+        ...nuevoProducto,
+        nuevaImagen: file 
       });
     }
   };
 
-  const handleGuardar = () => {
+  // Validar formulario antes de guardar
+  const validarFormulario = () => {
+    const nuevosErrores = {
+      nombre: !nuevoProducto.nombre.trim(),
+      precio: !nuevoProducto.precio || parseFloat(String(nuevoProducto.precio)) <= 0,
+      costo: !nuevoProducto.costo || parseFloat(String(nuevoProducto.costo)) < 0,
+      id_categoria: !nuevoProducto.id_categoria
+    };
     
-    onGuardar(productoEditado);
-    onClose();
+    setErrores(nuevosErrores);
+    
+    // Retorna true si no hay errores
+    return !Object.values(nuevosErrores).some(error => error);
+  };
+
+  // Guardar el nuevo producto
+  const handleGuardar = () => {
+    if (validarFormulario()) {
+      onGuardar(nuevoProducto);
+      onClose();
+    }
   };
 
   return (
     <Dialog open={open} onClose={onClose} aria-labelledby="form-dialog-title" maxWidth="md">
-      <DialogTitle id="form-dialog-title">Editar Producto</DialogTitle>
+      <DialogTitle id="form-dialog-title">Agregar Nuevo Producto</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, width: '500px' }}>
           <TextField
@@ -121,9 +153,13 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
             label="Nombre del Producto"
             type="text"
             fullWidth
-            value={productoEditado.nombre}
+            value={nuevoProducto.nombre}
             onChange={handleTextChange}
+            error={errores.nombre}
+            helperText={errores.nombre ? "El nombre es obligatorio" : ""}
+            required
           />
+          
           <TextField
             name="descripcion"
             label="Descripción"
@@ -131,58 +167,81 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
             fullWidth
             multiline
             rows={2}
-            value={productoEditado.descripcion}
+            value={nuevoProducto.descripcion}
             onChange={handleTextChange}
           />
+          
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
               name="precio"
               label="Precio"
               type="number"
               fullWidth
-              value={productoEditado.precio}
+              value={nuevoProducto.precio}
               onChange={handleTextChange}
               InputProps={{
                 startAdornment: '$',
               }}
+              error={errores.precio}
+              helperText={errores.precio ? "Ingrese un precio válido" : ""}
+              required
             />
+            
             <TextField
               name="costo"
               label="Costo"
               type="number"
               fullWidth
-              value={productoEditado.costo}
+              value={nuevoProducto.costo}
               onChange={handleTextChange}
               InputProps={{
                 startAdornment: '$',
               }}
+              error={errores.costo}
+              helperText={errores.costo ? "Ingrese un costo válido" : ""}
+              required
             />
           </Box>
+          
           <TextField
             name="stock"
             label="Stock"
             type="number"
             fullWidth
-            value={productoEditado.stock}
+            value={nuevoProducto.stock}
             onChange={handleTextChange}
           />
           
-          
-          {productoEditado.imagen && !imagenPreview && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1">Imagen actual:</Typography>
-              <img 
-                src={`../../public/Starbucks/${productoEditado.imagen}`} 
-                alt={productoEditado.nombre || 'Producto'} 
-                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
-              />
-            </Box>
-          )}
-          
+          <FormControl fullWidth required error={errores.id_categoria}>
+            <InputLabel id="categoria-label">Categoría</InputLabel>
+            <Select
+              labelId="categoria-label"
+              name="id_categoria"
+              value={nuevoProducto.id_categoria}
+              onChange={handleTextChange}
+              label="Categoría"
+            >
+              {categorias.length > 0 ? (
+                categorias.map((categoria) => (
+                  <MenuItem key={categoria.id_categoria} value={categoria.id_categoria}>
+                    {categoria.nombre}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem value={1}>Categoría por defecto</MenuItem>
+              )}
+            </Select>
+            {errores.id_categoria && (
+              <Typography variant="caption" color="error">
+                Seleccione una categoría
+              </Typography>
+            )}
+          </FormControl>
 
+          {/* Vista previa de la imagen seleccionada */}
           {imagenPreview && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1">Nueva imagen:</Typography>
+              <Typography variant="subtitle1">Vista previa:</Typography>
               <img 
                 src={imagenPreview} 
                 alt="Vista previa" 
@@ -191,7 +250,7 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
             </Box>
           )}
           
-     
+          {/* Selector de imagen */}
           <Box sx={{ mt: 2 }}>
             <Button
               component="label"
@@ -203,7 +262,7 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
               {cargandoImagen ? (
                 <CircularProgress size={24} />
               ) : (
-                "Seleccionar nueva imagen"
+                "Seleccionar imagen"
               )}
               <input
                 type="file"
@@ -230,4 +289,4 @@ const ModalEdicionProducto: React.FC<ModalEdicionProductoProps> = ({
   );
 };
 
-export default ModalEdicionProducto;
+export default ModalAgregarProducto;
