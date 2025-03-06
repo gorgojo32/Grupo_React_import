@@ -90,7 +90,15 @@ export default function Producto() {
         setModalAgregarOpen(false);
     };
 
-    const handleGuardarNuevoProducto = async (nuevoProducto: { nuevaImagen: string | Blob; nombre: any; descripcion: any; precio: string; costo: string; stock: string; id_categoria: string; }) => {
+    const handleGuardarNuevoProducto = async (nuevoProducto: { 
+        nuevaImagen: string | Blob; 
+        nombre: any; 
+        descripcion: any; 
+        precio: string; 
+        costo: string; 
+        stock: string; 
+        id_categoria: string; 
+    }) => {
         setLoading(true);
         
         try {
@@ -118,7 +126,7 @@ export default function Producto() {
                 }
             }
             
-            // Preparar datos para enviar al servidor
+            // Preparar datos para enviar al servidor - CORREGIDO
             const productoData = {
                 nombre: nuevoProducto.nombre,
                 descripcion: nuevoProducto.descripcion,
@@ -126,8 +134,13 @@ export default function Producto() {
                 costo: parseFloat(nuevoProducto.costo),
                 stock: parseInt(nuevoProducto.stock, 10),
                 imagen: nombreImagen,
-                id_categoria: parseInt(nuevoProducto.id_categoria, 10)
+                id_categoria: parseInt(nuevoProducto.id_categoria, 10),
+                // Añadir los campos faltantes
+                estado: 1, // Por defecto activo
+                fecha_creacion: new Date().toISOString() // Fecha actual
             };
+            
+            console.log("Enviando datos al servidor:", productoData);
             
             // Enviar petición para crear el producto
             const response = await fetch('http://localhost:8000/productos', {
@@ -145,6 +158,7 @@ export default function Producto() {
                 alert("Producto agregado correctamente");
             } else {
                 alert("Error al agregar el producto: " + data.msg);
+                console.error("Respuesta del servidor:", data);
             }
         } catch (error) {
             console.error("Error al agregar producto:", error);

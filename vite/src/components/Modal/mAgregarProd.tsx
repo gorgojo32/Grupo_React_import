@@ -32,6 +32,8 @@ interface NuevoProducto {
   imagen: string | null;
   id_categoria: number;
   nuevaImagen: File | null;
+  estado?: number;
+  fecha_creacion?: string;
 }
 
 const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
@@ -48,9 +50,10 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
     stock: 0,
     imagen: null,
     id_categoria: 1,
-    nuevaImagen: null
+    nuevaImagen: null,
+    estado: 1,
+    fecha_creacion: new Date().toISOString()
   });
-
   const [imagenPreview, setImagenPreview] = React.useState<string | null>(null);
   const [cargandoImagen, setCargandoImagen] = React.useState(false);
   const [errores, setErrores] = React.useState({
@@ -72,7 +75,9 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
         stock: 0,
         imagen: null,
         id_categoria: 1,
-        nuevaImagen: null
+        nuevaImagen: null,
+        estado: 1,
+        fecha_creacion: new Date().toISOString()
       });
       setImagenPreview(null);
       setErrores({
@@ -83,7 +88,6 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
       });
     }
   }, [open]);
-
 
 
 
