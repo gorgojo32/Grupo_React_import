@@ -22,8 +22,9 @@ interface ModalAgregarProductoProps {
   open: boolean;
   onClose: () => void;
   onGuardar: (nuevoProducto: any) => void;
-  categorias: Array<{ id_categoria: number, nombre: string }>;
-  requiereImagen?: boolean;
+  categorias: Array<{
+    tipoProducto: React.ReactNode; id_categoria: number, nombre: string 
+}>;
 }
 
 interface NuevoProducto {
@@ -295,6 +296,8 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
 
           <FormControl fullWidth required error={errores.id_categoria}>
             <InputLabel id="categoria-label">Categoría</InputLabel>
+            
+
             <Select
               labelId="categoria-label"
               name="id_categoria"
@@ -318,21 +321,24 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               {categorias.length > 0 ? (
                 categorias.map((categoria) => (
                   <MenuItem key={categoria.id_categoria} value={categoria.id_categoria}>
-                    {categoria.nombre}
+                    {categoria.tipoProducto} 
                   </MenuItem>
                 ))
               ) : (
                 <MenuItem value={1}>Categoría por defecto</MenuItem>
               )}
             </Select>
-            {errores.id_categoria && (
-              <Typography variant="caption" color="error">
-                Seleccione una categoría
-              </Typography>
-            )}
           </FormControl>
-          
-          {/* Selector de imagen */}
+          {imagenPreview && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1">Vista previa:</Typography>
+              <img
+                src={imagenPreview}
+                alt="Vista previa"
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+              />
+            </Box>
+          )}
           <Box sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="subtitle1">

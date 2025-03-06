@@ -1,17 +1,19 @@
 import * as React from 'react';
-import { Button, Grid2, IconButton, Stack, ButtonGroup } from "@mui/material";
+import { Button, Grid2, IconButton, Stack, ButtonGroup, CircularProgress } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import DinamicTable from '../components/DinamicTables/DinamicTable';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ModalAgregarProducto from '../components/Modal/mAgregarProd';
 
-// Definición de la URL base para imágenes
-const BASE_IMAGE_URL = '/public/Starbucks/';
+// URL base para la API y las imágenes
+const API_BASE_URL = 'http://localhost:8000';
+const IMAGE_BASE_URL = `${API_BASE_URL}/uploads/`; // Ajustado para usar la ruta de imágenes del servidor
 
 interface ProductosCoffe {
     id_producto: number | null;
     id_categoria: number;
+    tipoProducto?: string; // Añadido para mostrar el nombre de la categoría
     nombre: string;
     descripcion: string;
     precio: number;
@@ -26,31 +28,43 @@ export default function Producto() {
     const [modalAgregarOpen, setModalAgregarOpen] = React.useState<boolean>(false);
     const [categorias, setCategorias] = React.useState<any[]>([]);
 
-    const fetchProductos = () => {
+    const fetchProductos = async () => {
         setLoading(true);
-        fetch('http://localhost:8000/productos')
-            .then(response => response.json())
-            .then(data => {
-                setDataUsers(data.data.map((row: { id_producto: any }) => ({ ...row, id: row.id_producto })));
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error al obtener los Productos: ', error);
-                setLoading(false);
-            });
+        try {
+            const response = await fetch(`${API_BASE_URL}/productos`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Mapear los datos para asegurar que tengan el formato correcto
+                setDataUsers(data.data.map((row: any) => ({ 
+                    ...row, 
+                    id: row.id_producto,
+                    // Asegurar que la imagen tenga la ruta correcta (eliminar rutas duplicadas)
+                    imagen: row.imagen ? row.imagen.replace(/^\/uploads\//, '') : ''
+                })));
+            } else {
+                console.error('Error en la respuesta del servidor:', data);
+            }
+        } catch (error) {
+            console.error('Error al obtener los Productos: ', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const fetchCategorias = () => {
-        fetch('http://localhost:8000/categorias')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    setCategorias(data.data);
-                }
-            })
-            .catch(error => {
-                console.error('Error al obtener las categorías: ', error);
-            });
+    const fetchCategorias = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/categorias`);
+            const data = await response.json();
+            
+            if (data.success) {
+                setCategorias(data.data);
+            } else {
+                console.error('Error en la respuesta del servidor:', data);
+            }
+        } catch (error) {
+            console.error('Error al obtener las categorías: ', error);
+        }
     };
 
     React.useEffect(() => {
@@ -58,27 +72,49 @@ export default function Producto() {
         fetchCategorias();
     }, []);
 
+    // Columnas para la tabla de productos
     const columns: GridColDef[] = [
         { field: "id_producto", headerName: "#", width: 70 },
         {
             field: "imagen",
             headerName: "Imagen",
             width: 100,
-            renderCell: (params) => (
-                <img
-                    src={`${BASE_IMAGE_URL}${params.value}`}
-                    alt={params.row.nombre || 'Producto'}
-                    style={{ width: 50, height: 50, objectFit: 'contain' }}
-                    onError={(e) => {
-                        (e.target as HTMLImageElement).src = `${BASE_IMAGE_URL}default.png`;
-                    }}
-                />
-            )
+            renderCell: (params) => {
+                // Construir la URL completa de la imagen
+                const imageUrl = params.value ? `${IMAGE_BASE_URL}${params.value}` : null;
+                
+                return (
+                    <img
+                        src={imageUrl}
+                        alt={params.row.nombre || 'Producto'}
+                        style={{ width: 50, height: 50, objectFit: 'contain' }}
+                        onError={(e) => {
+                            // Imagen de respaldo si hay error al cargar
+                            (e.target as HTMLImageElement).src = `${API_BASE_URL}/uploads/default.png`;
+                        }}
+                    />
+                );
+            }
         },
         { field: "nombre", headerName: "Nombre del Producto", width: 146 },
-        { field: "descripcion", headerName: "Descripción", width: 400},
-        { field: "precio", headerName: "Precio", width: 80 },
-        { field: "costo", headerName: "Costo", width: 80 },
+        { field: "descripcion", headerName: "Descripción", width: 300 },
+        { field: "tipoProducto", headerName: "Categoría", width: 120 },
+        { 
+            field: "precio", 
+            headerName: "Precio", 
+            width: 100,
+            valueFormatter: (params) => {
+                return `$${params.value.toFixed(2)}`;
+            }
+        },
+        { 
+            field: "costo", 
+            headerName: "Costo", 
+            width: 100,
+            valueFormatter: (params) => {
+                return `$${params.value.toFixed(2)}`;
+            }
+        },
         { field: "stock", headerName: "Stock", width: 100 }
     ];
 
@@ -92,9 +128,9 @@ export default function Producto() {
     };
 
     const handleGuardarNuevoProducto = async (nuevoProducto: { 
-        nuevaImagen: string | Blob; 
-        nombre: any; 
-        descripcion: any; 
+        nuevaImagen: File | null; 
+        nombre: string; 
+        descripcion: string; 
         precio: string; 
         costo: string; 
         stock: string; 
@@ -104,14 +140,14 @@ export default function Producto() {
         
         try {
             // Procesar imagen si hay una nueva
-            let nombreImagen = "default.png"; // Imagen por defecto
+            let rutaImagen = "";
             
             if (nuevoProducto.nuevaImagen) {
                 const formData = new FormData();
-                formData.append('imagen', nuevoProducto.nuevaImagen);
-                formData.append('directorio', 'Starbucks');
+                // Añadir el archivo usando 'file' como nombre de campo (como espera el servidor)
+                formData.append('file', nuevoProducto.nuevaImagen);
                 
-                const imagenResponse = await fetch('http://localhost:8000/upload', {
+                const imagenResponse = await fetch(`${API_BASE_URL}/upload`, {
                     method: 'POST',
                     body: formData,
                 });
@@ -119,9 +155,10 @@ export default function Producto() {
                 const imagenData = await imagenResponse.json();
                 
                 if (imagenData.success) {
-                    nombreImagen = imagenData.fileName;
+                    // Obtener la ruta de la imagen desde la respuesta
+                    rutaImagen = imagenData.file.filename;
                 } else {
-                    alert("Error al subir la imagen: " + (imagenData.msg || 'Error desconocido'));
+                    alert("Error al subir la imagen: " + (imagenData.error || 'Error desconocido'));
                     setLoading(false);
                     return;
                 }
@@ -134,7 +171,7 @@ export default function Producto() {
                 precio: parseFloat(nuevoProducto.precio),
                 costo: parseFloat(nuevoProducto.costo),
                 stock: parseInt(nuevoProducto.stock, 10),
-                imagen: nombreImagen,
+                imagen: rutaImagen,
                 id_categoria: parseInt(nuevoProducto.id_categoria, 10),
                 estado: 1, // Por defecto activo
                 fecha_creacion: new Date().toISOString() // Fecha actual
@@ -143,7 +180,7 @@ export default function Producto() {
             console.log("Enviando datos al servidor:", productoData);
             
             // Enviar petición para crear el producto
-            const response = await fetch('http://localhost:8000/productos', {
+            const response = await fetch(`${API_BASE_URL}/productos`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -171,18 +208,17 @@ export default function Producto() {
 
     const handleEdit = async (row: any) => {
         setLoading(true);
-        console.log("Datos a enviar:", row);
+        console.log("Datos a editar:", row);
         
         try {
-            //Imagen
-            let nombreImagen = row.imagen;
+            // Manejar imagen si hay una nueva
+            let rutaImagen = row.imagen;
             
             if (row.nuevaImagen) {
                 const formData = new FormData();
-                formData.append('imagen', row.nuevaImagen);
-                formData.append('directorio', 'Starbucks');
+                formData.append('file', row.nuevaImagen);
                 
-                const imagenResponse = await fetch('http://localhost:8000/upload', {
+                const imagenResponse = await fetch(`${API_BASE_URL}/upload`, {
                     method: 'POST',
                     body: formData,
                 });
@@ -190,28 +226,31 @@ export default function Producto() {
                 const imagenData = await imagenResponse.json();
                 
                 if (imagenData.success) {
-                    nombreImagen = imagenData.fileName;
+                    rutaImagen = imagenData.file.filename;
                 } else {
-                    alert("Error al subir la imagen: " + (imagenData.msg || 'Error desconocido'));
+                    alert("Error al subir la imagen: " + (imagenData.error || 'Error desconocido'));
                     setLoading(false);
                     return;
                 }
             }
             
-            // Luego actualizamos 
+            // Preparar datos para actualizar el producto
             const dataToUpdate = {
                 nombre: row.nombre,
                 descripcion: row.descripcion,
                 precio: parseFloat(row.precio), 
                 costo: parseFloat(row.costo),   
                 stock: parseInt(row.stock, 10),  
-                imagen: nombreImagen,
-                id_categoria: parseInt(row.id_categoria, 10)
+                imagen: rutaImagen,
+                id_categoria: parseInt(row.id_categoria, 10),
+                estado: 1, // Mantener activo
+                fecha_creacion: new Date().toISOString() // Actualizar fecha de modificación
             };
             
-            console.log("Data formateada:", dataToUpdate);
+            console.log("Datos formateados para actualización:", dataToUpdate);
             
-            const response = await fetch(`http://localhost:8000/productos/${row.id_producto}`, {
+            // Enviar petición para actualizar el producto
+            const response = await fetch(`${API_BASE_URL}/productos/${row.id_producto}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -222,7 +261,7 @@ export default function Producto() {
             const data = await response.json();
     
             if (data.success) {
-                fetchProductos();
+                fetchProductos(); // Refrescar la lista de productos
                 alert("Producto actualizado correctamente");
             } else {
                 alert("Error al actualizar el producto: " + (data.msg || 'Error desconocido'));
@@ -241,14 +280,15 @@ export default function Producto() {
         if (confirmarEliminar) {
             setLoading(true);
             try {
-                const response = await fetch(`http://localhost:8000/productos/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/productos/${id}`, {
                     method: 'DELETE',
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    setDataUsers((prevUsers) => prevUsers.filter((user) => user.id_producto !== id));
+                    // Refrescar la lista completa en lugar de solo filtrar localmente
+                    fetchProductos();
                     alert("Producto eliminado correctamente");
                 } else {
                     alert("Error al eliminar el Producto: " + (data.msg || 'Error desconocido'));
@@ -272,9 +312,16 @@ export default function Producto() {
                 startIcon={<AddIcon />} 
                 onClick={handleAgregarProducto}
                 sx={{ mb: 2 }}
+                disabled={loading}
             >
                 Agregar Producto
             </Button>
+
+            {loading && (
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+                    <CircularProgress />
+                </div>
+            )}
 
             <Grid2 container spacing={2} marginTop={5}>
                 <Grid2 size={12}>
