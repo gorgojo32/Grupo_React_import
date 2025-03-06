@@ -1,7 +1,11 @@
 import * as React from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button, Box
+  TextField, Button, Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select
 } from '@mui/material';
 
 
@@ -15,10 +19,10 @@ interface CategoriaUI {
 
 interface CategoriaAPI {
   id_categoria?: number;
-  tipoProducto: string;     
+  tipoProducto: string;
   tipoDescripcion: string;
   estado: number;
-  fecha_creacion: string;    
+  fecha_creacion: string;
 }
 
 interface ModalEdicionCategoriaProps {
@@ -63,10 +67,10 @@ const ModalEdicionCategoria: React.FC<ModalEdicionCategoriaProps> = ({
       estado: Number(categoriaEditada.estado),
       fecha_creacion: categoriaEditada.fecha_creacion
     };
-        
+
     onGuardar(categoriaParaAPI);
     onClose();
- };
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -89,20 +93,29 @@ const ModalEdicionCategoria: React.FC<ModalEdicionCategoriaProps> = ({
             value={categoriaEditada.tipoDescripcion}
             onChange={handleTextChange}
           />
-          <TextField
-            name="estado"
-            label="Estado (0 o 1)"
-            type="number"
-            inputProps={{ min: 0, max: 1 }}
-            fullWidth
-            value={categoriaEditada.estado}
-            onChange={handleTextChange}
-          />
+
+          <FormControl fullWidth>
+            <InputLabel shrink>Estado</InputLabel>
+            <Select
+              name="estado"
+              value={categoriaEditada.estado}
+              onChange={(e) =>
+                setCategoriaEditada({
+                  ...categoriaEditada,
+                  estado: Number(e.target.value),
+                })
+              }
+            >
+              <MenuItem value={1}>Activo</MenuItem>
+              <MenuItem value={0}>Inactivo</MenuItem>
+            </Select>
+          </FormControl>
+
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="error">Cancelar</Button>
-        <Button onClick={handleGuardar} color="primary" variant="contained">Guardar</Button>
+        <Button onClick={onClose} color="inherit">Cancelar</Button>
+        <Button onClick={handleGuardar} color="success" variant="contained">Guardar</Button>
       </DialogActions>
     </Dialog>
   );
