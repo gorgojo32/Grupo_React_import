@@ -46,10 +46,10 @@ export default function Categorias() {
         console.log("Datos a enviar:", row);
         try {
             const dataToUpdate = {
-                tipoProd:  row.tipoProducto, // Aceptar ambos formatos
+                tipoProducto:  row.tipoProducto, // Aceptar ambos formatos
                 tipoDescripcion: row.tipoDescripcion,
                 estado: Number(row.estado),
-                fecha:  row.fecha_creacion // Aceptar ambos formatos
+                fecha_creacion:  row.fecha_creacion // Aceptar ambos formatos
             };
 
             console.log("Data Formateada", dataToUpdate);
@@ -117,7 +117,7 @@ export default function Categorias() {
                 tipoProducto: nuevaCategoria.tipoProducto,
                 tipoDescripcion: nuevaCategoria.tipoDescripcion,
                 estado: Number(nuevaCategoria.estado),
-                fecha: nuevaCategoria.fecha_creacion
+                fecha_creacion: nuevaCategoria.fecha_creacion
             };
 
             console.log("Enviando nueva categoría:", dataToSend);

@@ -12,17 +12,20 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Alert
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface ModalAgregarProductoProps {
   open: boolean;
   onClose: () => void;
   onGuardar: (nuevoProducto: any) => void;
   categorias: Array<{ id_categoria: number, nombre: string }>;
+  requiereImagen?: boolean;
 }
+
 interface NuevoProducto {
   nombre: string;
   descripcion: string;
@@ -36,11 +39,15 @@ interface NuevoProducto {
   fecha_creacion?: string;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
+
 const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
   open,
   onClose,
   onGuardar,
-  categorias = []
+  categorias = [],
+  requiereImagen = false
 }) => {
   const [nuevoProducto, setNuevoProducto] = React.useState<NuevoProducto>({
     nombre: '',
@@ -49,22 +56,26 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
     costo: '',
     stock: 0,
     imagen: null,
-    id_categoria: 1,
+    id_categoria: categorias.length > 0 ? categorias[0].id_categoria : 1,
     nuevaImagen: null,
     estado: 1,
     fecha_creacion: new Date().toISOString()
   });
+  
   const [imagenPreview, setImagenPreview] = React.useState<string | null>(null);
   const [cargandoImagen, setCargandoImagen] = React.useState(false);
+  const [guardando, setGuardando] = React.useState(false);
+  const [errorImagen, setErrorImagen] = React.useState<string | null>(null);
+  
   const [errores, setErrores] = React.useState({
     nombre: false,
     precio: false,
     costo: false,
     id_categoria: false,
+    imagen: false
   });
 
-
-
+  // Resetear el estado al abrir el modal
   React.useEffect(() => {
     if (open) {
       setNuevoProducto({
@@ -74,7 +85,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
         costo: '',
         stock: 0,
         imagen: null,
-        id_categoria: 1,
+        id_categoria: categorias.length > 0 ? categorias[0].id_categoria : 1,
         nuevaImagen: null,
         estado: 1,
         fecha_creacion: new Date().toISOString()
@@ -85,11 +96,20 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
         precio: false,
         costo: false,
         id_categoria: false,
+        imagen: false
       });
+      setErrorImagen(null);
     }
-  }, [open]);
+  }, [open, categorias]);
 
-
+  // Limpiar URL objeto al desmontar
+  React.useEffect(() => {
+    return () => {
+      if (imagenPreview) {
+        URL.revokeObjectURL(imagenPreview);
+      }
+    };
+  }, [imagenPreview]);
 
   const handleTextChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> |
@@ -105,7 +125,6 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
         [name]: value
       });
 
-
       if (errores[name as keyof typeof errores]) {
         setErrores({
           ...errores,
@@ -117,38 +136,87 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
 
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    setErrorImagen(null);
+    
+    if (!file) return;
+    
+    // Validar tipo de archivo (solo imágenes)
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setErrorImagen('Solo se permiten archivos de imagen (JPG, PNG, GIF)');
+      return;
+    }
+    
+    // Validar tamaño de archivo
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorImagen(`La imagen excede el tamaño máximo de 5MB`);
+      return;
+    }
 
+    setCargandoImagen(true);
+    
+    // Limpiar preview anterior
+    if (imagenPreview) {
+      URL.revokeObjectURL(imagenPreview);
+    }
+
+    try {
       const fileUrl = URL.createObjectURL(file);
       setImagenPreview(fileUrl);
-
+      
       setNuevoProducto({
         ...nuevoProducto,
         nuevaImagen: file
       });
+      
+      if (errores.imagen) {
+        setErrores({
+          ...errores,
+          imagen: false
+        });
+      }
+    } catch (error) {
+      setErrorImagen('Error al procesar la imagen');
+    } finally {
+      setCargandoImagen(false);
     }
   };
 
+  const eliminarImagen = () => {
+    if (imagenPreview) {
+      URL.revokeObjectURL(imagenPreview);
+      setImagenPreview(null);
+    }
+    
+    setNuevoProducto({
+      ...nuevoProducto,
+      nuevaImagen: null
+    });
+  };
 
   const validarFormulario = () => {
     const nuevosErrores = {
       nombre: !nuevoProducto.nombre.trim(),
       precio: !nuevoProducto.precio || parseFloat(String(nuevoProducto.precio)) <= 0,
       costo: !nuevoProducto.costo || parseFloat(String(nuevoProducto.costo)) < 0,
-      id_categoria: !nuevoProducto.id_categoria
+      id_categoria: !nuevoProducto.id_categoria,
+      imagen: requiereImagen && !nuevoProducto.nuevaImagen
     };
 
     setErrores(nuevosErrores);
-
-
     return !Object.values(nuevosErrores).some(error => error);
   };
 
-
   const handleGuardar = () => {
     if (validarFormulario()) {
-      onGuardar(nuevoProducto);
-      onClose();
+      setGuardando(true);
+      try {
+        onGuardar(nuevoProducto);
+        onClose();
+      } catch (error) {
+        console.error('Error al guardar:', error);
+      } finally {
+        setGuardando(false);
+      }
     }
   };
 
@@ -195,6 +263,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               error={errores.precio}
               helperText={errores.precio ? "Ingrese un precio válido" : ""}
               required
+              inputProps={{ min: "0.01", step: "0.01" }}
             />
 
             <TextField
@@ -210,6 +279,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               error={errores.costo}
               helperText={errores.costo ? "Ingrese un costo válido" : ""}
               required
+              inputProps={{ min: "0", step: "0.01" }}
             />
           </Box>
 
@@ -220,6 +290,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             fullWidth
             value={nuevoProducto.stock}
             onChange={handleTextChange}
+            inputProps={{ min: "0", step: "1" }}
           />
 
           <FormControl fullWidth required error={errores.id_categoria}>
@@ -260,51 +331,84 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               </Typography>
             )}
           </FormControl>
-          {/* Vista previa de la imagen seleccionada */}
-          {imagenPreview && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1">Vista previa:</Typography>
-              <img
-                src={imagenPreview}
-                alt="Vista previa"
-                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
-              />
-            </Box>
-          )}
-
+          
           {/* Selector de imagen */}
           <Box sx={{ mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="subtitle1">
+                Imagen del producto {requiereImagen && <span style={{ color: 'red' }}>*</span>}
+              </Typography>
+              
+              {imagenPreview && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={eliminarImagen}
+                  size="small"
+                >
+                  Eliminar
+                </Button>
+              )}
+            </Box>
+            
             <Button
               component="label"
               variant="contained"
-              startIcon={<CloudUploadIcon />}
+              startIcon={cargandoImagen ? <CircularProgress size={24} /> : <CloudUploadIcon />}
               disabled={cargandoImagen}
               sx={{ mb: 1 }}
+              fullWidth
             >
-              {cargandoImagen ? (
-                <CircularProgress size={24} />
-              ) : (
-                "Seleccionar imagen"
-              )}
+              {cargandoImagen ? "Procesando..." : "Seleccionar imagen"}
               <input
                 type="file"
-                accept="image/*"
+                accept={ALLOWED_IMAGE_TYPES.join(',')}
                 hidden
                 onChange={handleImagenChange}
               />
             </Button>
+            
             <Typography variant="caption" color="textSecondary">
               Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB
             </Typography>
+            
+            {errorImagen && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {errorImagen}
+              </Alert>
+            )}
+            
+            {errores.imagen && (
+              <Typography variant="caption" color="error" display="block" sx={{ mt: 1 }}>
+                La imagen es obligatoria
+              </Typography>
+            )}
           </Box>
+          
+          {/* Vista previa de la imagen seleccionada */}
+          {imagenPreview && (
+            <Box sx={{ mt: 2, border: '1px solid #eee', p: 1, borderRadius: 1 }}>
+              <img
+                src={imagenPreview}
+                alt="Vista previa"
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+              />
+            </Box>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="error">
           Cancelar
         </Button>
-        <Button onClick={handleGuardar} color="primary" variant="contained">
-          Guardar
+        <Button 
+          onClick={handleGuardar} 
+          color="primary" 
+          variant="contained"
+          disabled={guardando}
+        >
+          {guardando ? "Guardando..." : "Guardar"}
         </Button>
       </DialogActions>
     </Dialog>

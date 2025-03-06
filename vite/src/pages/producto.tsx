@@ -6,7 +6,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ModalAgregarProducto from '../components/Modal/mAgregarProd';
 
-
+// Definición de la URL base para imágenes
+const BASE_IMAGE_URL = '/public/Starbucks/';
 
 interface ProductosCoffe {
     id_producto: number | null;
@@ -65,11 +66,11 @@ export default function Producto() {
             width: 100,
             renderCell: (params) => (
                 <img
-                    src={`../../public/Starbucks/${params.value}`}
-                    alt={params.row.nombre}
+                    src={`${BASE_IMAGE_URL}${params.value}`}
+                    alt={params.row.nombre || 'Producto'}
                     style={{ width: 50, height: 50, objectFit: 'contain' }}
                     onError={(e) => {
-                        (e.target as HTMLImageElement).src = '../../public/Starbucks/default.png';
+                        (e.target as HTMLImageElement).src = `${BASE_IMAGE_URL}default.png`;
                     }}
                 />
             )
@@ -120,13 +121,13 @@ export default function Producto() {
                 if (imagenData.success) {
                     nombreImagen = imagenData.fileName;
                 } else {
-                    alert("Error al subir la imagen: " + imagenData.msg);
+                    alert("Error al subir la imagen: " + (imagenData.msg || 'Error desconocido'));
                     setLoading(false);
                     return;
                 }
             }
             
-            // Preparar datos para enviar al servidor - CORREGIDO
+            // Preparar datos para enviar al servidor
             const productoData = {
                 nombre: nuevoProducto.nombre,
                 descripcion: nuevoProducto.descripcion,
@@ -135,7 +136,6 @@ export default function Producto() {
                 stock: parseInt(nuevoProducto.stock, 10),
                 imagen: nombreImagen,
                 id_categoria: parseInt(nuevoProducto.id_categoria, 10),
-                // Añadir los campos faltantes
                 estado: 1, // Por defecto activo
                 fecha_creacion: new Date().toISOString() // Fecha actual
             };
@@ -156,13 +156,14 @@ export default function Producto() {
             if (data.success) {
                 fetchProductos(); // Refrescar la lista de productos
                 alert("Producto agregado correctamente");
+                handleCloseModalAgregar(); // Cerrar el modal después de agregar
             } else {
-                alert("Error al agregar el producto: " + data.msg);
+                alert("Error al agregar el producto: " + (data.msg || 'Error desconocido'));
                 console.error("Respuesta del servidor:", data);
             }
         } catch (error) {
             console.error("Error al agregar producto:", error);
-            alert("Error al agregar el producto");
+            alert("Error al agregar el producto: " + (error instanceof Error ? error.message : 'Error desconocido'));
         } finally {
             setLoading(false);
         }
@@ -191,7 +192,7 @@ export default function Producto() {
                 if (imagenData.success) {
                     nombreImagen = imagenData.fileName;
                 } else {
-                    alert("Error al subir la imagen: " + imagenData.msg);
+                    alert("Error al subir la imagen: " + (imagenData.msg || 'Error desconocido'));
                     setLoading(false);
                     return;
                 }
@@ -224,11 +225,11 @@ export default function Producto() {
                 fetchProductos();
                 alert("Producto actualizado correctamente");
             } else {
-                alert("Error al actualizar el producto: " + data.msg);
+                alert("Error al actualizar el producto: " + (data.msg || 'Error desconocido'));
             }
         } catch (error) {
             console.error("Error al editar:", error);
-            alert("Error al actualizar el Producto");
+            alert("Error al actualizar el Producto: " + (error instanceof Error ? error.message : 'Error desconocido'));
         } finally {
             setLoading(false);
         }
@@ -250,11 +251,11 @@ export default function Producto() {
                     setDataUsers((prevUsers) => prevUsers.filter((user) => user.id_producto !== id));
                     alert("Producto eliminado correctamente");
                 } else {
-                    alert("Error al eliminar el Producto: " + data.msg);
+                    alert("Error al eliminar el Producto: " + (data.msg || 'Error desconocido'));
                 }
             } catch (error) {
                 console.error("Error al eliminar:", error);
-                alert("Error al eliminar el Producto");
+                alert("Error al eliminar el Producto: " + (error instanceof Error ? error.message : 'Error desconocido'));
             } finally {
                 setLoading(false);
             }
@@ -281,11 +282,11 @@ export default function Producto() {
                         rows={dataUsers}
                         columns={columns}
                         onDelete={handleDelete}
-                        onEdit={handleEdit} />
+                        onEdit={handleEdit}
+                    />
                 </Grid2>
             </Grid2>
 
-            
             <ModalAgregarProducto
                 open={modalAgregarOpen}
                 onClose={handleCloseModalAgregar}
