@@ -23,8 +23,11 @@ interface ModalAgregarProductoProps {
   onClose: () => void;
   onGuardar: (nuevoProducto: any) => void;
   categorias: Array<{
-    tipoProducto: React.ReactNode; id_categoria: number, nombre: string 
-}>;
+    id_categoria: number,
+    tipoProducto: React.ReactNode,
+    nombre?: string
+  }>;
+  requiereImagen?: boolean;
 }
 
 interface NuevoProducto {
@@ -36,8 +39,16 @@ interface NuevoProducto {
   imagen: string | null;
   id_categoria: number;
   nuevaImagen: File | null;
-  estado?: number;
-  fecha_creacion?: string;
+  estado: number;
+  fecha_creacion: string;
+}
+
+interface FormErrores {
+  nombre: boolean;
+  precio: boolean;
+  costo: boolean;
+  id_categoria: boolean;
+  imagen: boolean;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
@@ -68,7 +79,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
   const [guardando, setGuardando] = React.useState(false);
   const [errorImagen, setErrorImagen] = React.useState<string | null>(null);
   
-  const [errores, setErrores] = React.useState({
+  const [errores, setErrores] = React.useState<FormErrores>({
     nombre: false,
     precio: false,
     costo: false,
@@ -113,24 +124,39 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
   }, [imagenPreview]);
 
   const handleTextChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> |
-      React.SyntheticEvent<Element, Event>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const target = e.target as HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown };
-    const name = target.name;
-    const value = target.value;
+    const { name, value } = e.target;
 
     if (name) {
-      setNuevoProducto({
-        ...nuevoProducto,
+      setNuevoProducto(prev => ({
+        ...prev,
         [name]: value
-      });
+      }));
 
-      if (errores[name as keyof typeof errores]) {
-        setErrores({
-          ...errores,
+      if (errores[name as keyof FormErrores]) {
+        setErrores(prev => ({
+          ...prev,
           [name]: false
-        });
+        }));
+      }
+    }
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<{ name?: string; value: unknown }>) => {
+    const { name, value } = e.target;
+    
+    if (name) {
+      setNuevoProducto(prev => ({
+        ...prev,
+        [name]: value
+      }));
+
+      if (errores[name as keyof FormErrores]) {
+        setErrores(prev => ({
+          ...prev,
+          [name]: false
+        }));
       }
     }
   };
@@ -164,18 +190,19 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
       const fileUrl = URL.createObjectURL(file);
       setImagenPreview(fileUrl);
       
-      setNuevoProducto({
-        ...nuevoProducto,
+      setNuevoProducto(prev => ({
+        ...prev,
         nuevaImagen: file
-      });
+      }));
       
       if (errores.imagen) {
-        setErrores({
-          ...errores,
+        setErrores(prev => ({
+          ...prev,
           imagen: false
-        });
+        }));
       }
     } catch (error) {
+      console.error('Error al procesar la imagen:', error);
       setErrorImagen('Error al procesar la imagen');
     } finally {
       setCargandoImagen(false);
@@ -188,13 +215,13 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
       setImagenPreview(null);
     }
     
-    setNuevoProducto({
-      ...nuevoProducto,
+    setNuevoProducto(prev => ({
+      ...prev,
       nuevaImagen: null
-    });
+    }));
   };
 
-  const validarFormulario = () => {
+  const validarFormulario = (): boolean => {
     const nuevosErrores = {
       nombre: !nuevoProducto.nombre.trim(),
       precio: !nuevoProducto.precio || parseFloat(String(nuevoProducto.precio)) <= 0,
@@ -207,25 +234,41 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
     return !Object.values(nuevosErrores).some(error => error);
   };
 
-  const handleGuardar = () => {
-    if (validarFormulario()) {
-      setGuardando(true);
-      try {
-        onGuardar(nuevoProducto);
-        onClose();
-      } catch (error) {
-        console.error('Error al guardar:', error);
-      } finally {
-        setGuardando(false);
-      }
+  const handleGuardar = async () => {
+    if (!validarFormulario()) {
+      return;
+    }
+    
+    setGuardando(true);
+    try {
+      // Preparar los datos para enviar al servidor
+      const productoParaGuardar = {
+        ...nuevoProducto,
+        precio: parseFloat(String(nuevoProducto.precio)),
+        costo: parseFloat(String(nuevoProducto.costo)),
+        stock: parseInt(String(nuevoProducto.stock), 10)
+      };
+      
+      await onGuardar(productoParaGuardar);
+      onClose();
+    } catch (error) {
+      console.error('Error al guardar el producto:', error);
+    } finally {
+      setGuardando(false);
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} aria-labelledby="form-dialog-title" maxWidth="md">
+    <Dialog 
+      open={open} 
+      onClose={!guardando ? onClose : undefined} 
+      aria-labelledby="form-dialog-title" 
+      maxWidth="md"
+      fullWidth
+    >
       <DialogTitle id="form-dialog-title">Agregar Nuevo Producto</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, width: '500px' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, width: '100%' }}>
           <TextField
             autoFocus
             name="nombre"
@@ -237,6 +280,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             error={errores.nombre}
             helperText={errores.nombre ? "El nombre es obligatorio" : ""}
             required
+            disabled={guardando}
           />
 
           <TextField
@@ -245,12 +289,13 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             type="text"
             fullWidth
             multiline
-            rows={2}
+            rows={3}
             value={nuevoProducto.descripcion}
             onChange={handleTextChange}
+            disabled={guardando}
           />
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
             <TextField
               name="precio"
               label="Precio"
@@ -262,9 +307,10 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
                 startAdornment: '$',
               }}
               error={errores.precio}
-              helperText={errores.precio ? "Ingrese un precio válido" : ""}
+              helperText={errores.precio ? "Ingrese un precio válido mayor a cero" : ""}
               required
               inputProps={{ min: "0.01", step: "0.01" }}
+              disabled={guardando}
             />
 
             <TextField
@@ -278,67 +324,54 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
                 startAdornment: '$',
               }}
               error={errores.costo}
-              helperText={errores.costo ? "Ingrese un costo válido" : ""}
+              helperText={errores.costo ? "Ingrese un costo válido (mayor o igual a cero)" : ""}
               required
               inputProps={{ min: "0", step: "0.01" }}
+              disabled={guardando}
             />
           </Box>
 
-          <TextField
-            name="stock"
-            label="Stock"
-            type="number"
-            fullWidth
-            value={nuevoProducto.stock}
-            onChange={handleTextChange}
-            inputProps={{ min: "0", step: "1" }}
-          />
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <TextField
+              name="stock"
+              label="Stock"
+              type="number"
+              fullWidth
+              value={nuevoProducto.stock}
+              onChange={handleTextChange}
+              inputProps={{ min: "0", step: "1" }}
+              disabled={guardando}
+            />
 
-          <FormControl fullWidth required error={errores.id_categoria}>
-            <InputLabel id="categoria-label">Categoría</InputLabel>
-            
+            <FormControl fullWidth required error={errores.id_categoria} disabled={guardando}>
+              <InputLabel id="categoria-label">Categoría</InputLabel>
+              <Select
+                labelId="categoria-label"
+                name="id_categoria"
+                value={nuevoProducto.id_categoria}
+                onChange={(e) => {
+                  handleSelectChange({
+                    target: {
+                      name: 'id_categoria',
+                      value: e.target.value
+                    }
+                  } as React.ChangeEvent<{ name?: string; value: unknown }>);
+                }}
+                label="Categoría"
+              >
+                {categorias.length > 0 ? (
+                  categorias.map((categoria) => (
+                    <MenuItem key={categoria.id_categoria} value={categoria.id_categoria}>
+                      {categoria.tipoProducto}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value={1}>Categoría por defecto</MenuItem>
+                )}
+              </Select>
+            </FormControl>
+          </Box>
 
-            <Select
-              labelId="categoria-label"
-              name="id_categoria"
-              value={nuevoProducto.id_categoria}
-              onChange={(e) => {
-                const value = e.target.value;
-                setNuevoProducto({
-                  ...nuevoProducto,
-                  id_categoria: value as number
-                });
-
-                if (errores.id_categoria) {
-                  setErrores({
-                    ...errores,
-                    id_categoria: false
-                  });
-                }
-              }}
-              label="Categoría"
-            >
-              {categorias.length > 0 ? (
-                categorias.map((categoria) => (
-                  <MenuItem key={categoria.id_categoria} value={categoria.id_categoria}>
-                    {categoria.tipoProducto} 
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem value={1}>Categoría por defecto</MenuItem>
-              )}
-            </Select>
-          </FormControl>
-          {imagenPreview && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1">Vista previa:</Typography>
-              <img
-                src={imagenPreview}
-                alt="Vista previa"
-                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
-              />
-            </Box>
-          )}
           <Box sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="subtitle1">
@@ -352,6 +385,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
                   startIcon={<DeleteIcon />}
                   onClick={eliminarImagen}
                   size="small"
+                  disabled={guardando}
                 >
                   Eliminar
                 </Button>
@@ -362,7 +396,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               component="label"
               variant="contained"
               startIcon={cargandoImagen ? <CircularProgress size={24} /> : <CloudUploadIcon />}
-              disabled={cargandoImagen}
+              disabled={cargandoImagen || guardando}
               sx={{ mb: 1 }}
               fullWidth
             >
@@ -372,6 +406,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
                 accept={ALLOWED_IMAGE_TYPES.join(',')}
                 hidden
                 onChange={handleImagenChange}
+                disabled={guardando}
               />
             </Button>
             
@@ -405,7 +440,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="error">
+        <Button onClick={onClose} color="error" disabled={guardando}>
           Cancelar
         </Button>
         <Button 
@@ -413,6 +448,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
           color="primary" 
           variant="contained"
           disabled={guardando}
+          startIcon={guardando && <CircularProgress size={20} color="inherit" />}
         >
           {guardando ? "Guardando..." : "Guardar"}
         </Button>

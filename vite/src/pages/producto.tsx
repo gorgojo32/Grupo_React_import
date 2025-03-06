@@ -1,345 +1,518 @@
 import * as React from 'react';
-import { Button, Grid2, IconButton, Stack, ButtonGroup, CircularProgress } from "@mui/material";
+import { 
+  Button, 
+  Grid, 
+  CircularProgress, 
+  Typography, 
+  Container, 
+  Box, 
+  Snackbar, 
+  Alert, 
+  AlertProps, 
+  useTheme,
+  useMediaQuery
+} from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import DinamicTable from '../components/DinamicTables/DinamicTable';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ModalAgregarProducto from '../components/Modal/mAgregarProd';
 
-// URL base para la API y las imágenes
+// Configuración de la API
 const API_BASE_URL = 'http://localhost:8000';
-const IMAGE_BASE_URL = `${API_BASE_URL}/uploads/`; // Ajustado para usar la ruta de imágenes del servidor
+const IMAGE_BASE_URL = `${API_BASE_URL}/uploads/`;
 
+// Interfaces
 interface ProductosCoffe {
-    id_producto: number | null;
-    id_categoria: number;
-    tipoProducto?: string; // Añadido para mostrar el nombre de la categoría
-    nombre: string;
-    descripcion: string;
-    precio: number;
-    costo: number;
-    stock: number;
-    imagen: string;
+  id_producto: number;
+  id_categoria: number;
+  tipoProducto?: string;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  costo: number;
+  stock: number;
+  imagen: string | null;
+}
+
+interface Categoria {
+  id_categoria: number;
+  tipoProducto: string;
+  nombre?: string;
+}
+
+interface AlertMessage {
+  message: string;
+  severity: AlertProps['severity'];
+  open: boolean;
 }
 
 export default function Producto() {
-    const [dataUsers, setDataUsers] = React.useState<ProductosCoffe[]>([]);
-    const [loading, setLoading] = React.useState<boolean>(false);
-    const [modalAgregarOpen, setModalAgregarOpen] = React.useState<boolean>(false);
-    const [categorias, setCategorias] = React.useState<any[]>([]);
+  // Estados
+  const [productos, setProductos] = React.useState<ProductosCoffe[]>([]);
+  const [categorias, setCategorias] = React.useState<Categoria[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [modalAgregarOpen, setModalAgregarOpen] = React.useState<boolean>(false);
+  const [alert, setAlert] = React.useState<AlertMessage>({
+    message: '',
+    severity: 'info',
+    open: false
+  });
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const fetchProductos = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${API_BASE_URL}/productos`);
-            const data = await response.json();
-            
-            if (data.success) {
-                // Mapear los datos para asegurar que tengan el formato correcto
-                setDataUsers(data.data.map((row: any) => ({ 
-                    ...row, 
-                    id: row.id_producto,
-                    // Asegurar que la imagen tenga la ruta correcta (eliminar rutas duplicadas)
-                    imagen: row.imagen ? row.imagen.replace(/^\/uploads\//, '') : ''
-                })));
-            } else {
-                console.error('Error en la respuesta del servidor:', data);
-            }
-        } catch (error) {
-            console.error('Error al obtener los Productos: ', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Función para mostrar alertas
+  const showAlert = (message: string, severity: AlertProps['severity'] = 'info') => {
+    setAlert({
+      message,
+      severity,
+      open: true
+    });
+  };
 
-    const fetchCategorias = async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/categorias`);
-            const data = await response.json();
-            
-            if (data.success) {
-                setCategorias(data.data);
-            } else {
-                console.error('Error en la respuesta del servidor:', data);
-            }
-        } catch (error) {
-            console.error('Error al obtener las categorías: ', error);
-        }
-    };
+  const handleCloseAlert = () => {
+    setAlert((prev) => ({ ...prev, open: false }));
+  };
 
-    React.useEffect(() => {
-        fetchProductos();
-        fetchCategorias();
-    }, []);
+  // Obtener productos desde la API
+  const fetchProductos = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/productos`);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Mapear los datos para asegurar que tengan el formato correcto
+        setProductos(data.data.map((row: any) => ({ 
+          ...row, 
+          // Asegurar que la imagen tenga la ruta correcta
+          imagen: row.imagen ? (
+            row.imagen.startsWith('http') 
+              ? row.imagen 
+              : row.imagen.startsWith('/uploads/') 
+                ? row.imagen
+                : `/uploads/${row.imagen}`
+          ) : null
+        })));
+      } else {
+        showAlert(`Error al cargar productos: ${data.msg || 'Error desconocido'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error al obtener los Productos:', error);
+      showAlert(`Error al cargar productos: ${error instanceof Error ? error.message : 'Error de conexión'}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Columnas para la tabla de productos
-    const columns: GridColDef[] = [
-        { field: "id_producto", headerName: "#", width: 70 },
-        {
-            field: "imagen",
-            headerName: "Imagen",
-            width: 100,
-            renderCell: (params) => {
-                // Construir la URL completa de la imagen
-                const imageUrl = params.value ? `${IMAGE_BASE_URL}${params.value}` : null;
-                
-                return (
-                    <img
-                        src={imageUrl}
-                        alt={params.row.nombre || 'Producto'}
-                        style={{ width: 50, height: 50, objectFit: 'contain' }}
-                        onError={(e) => {
-                            // Imagen de respaldo si hay error al cargar
-                            (e.target as HTMLImageElement).src = `${API_BASE_URL}/uploads/default.png`;
-                        }}
-                    />
-                );
-            }
-        },
-        { field: "nombre", headerName: "Nombre del Producto", width: 146 },
-        { field: "descripcion", headerName: "Descripción", width: 300 },
-        { field: "tipoProducto", headerName: "Categoría", width: 120 },
-        { 
-            field: "precio", 
-            headerName: "Precio", 
-            width: 100,
-            valueFormatter: (params) => {
-                return `$${params.value.toFixed(2)}`;
-            }
-        },
-        { 
-            field: "costo", 
-            headerName: "Costo", 
-            width: 100,
-            valueFormatter: (params) => {
-                return `$${params.value.toFixed(2)}`;
-            }
-        },
-        { field: "stock", headerName: "Stock", width: 100 }
-    ];
+  // Obtener categorías desde la API
+  const fetchCategorias = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/categorias`);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setCategorias(data.data);
+      } else {
+        console.error('Error en la respuesta del servidor:', data);
+      }
+    } catch (error) {
+      console.error('Error al obtener las categorías:', error);
+      showAlert('Error al cargar las categorías', 'warning');
+    }
+  };
 
-    // Funciones para el manejo del modal de agregar
-    const handleAgregarProducto = () => {
-        setModalAgregarOpen(true);
-    };
+  // Cargar datos iniciales
+  React.useEffect(() => {
+    fetchProductos();
+    fetchCategorias();
+  }, []);
 
-    const handleCloseModalAgregar = () => {
-        setModalAgregarOpen(false);
-    };
-
-    const handleGuardarNuevoProducto = async (nuevoProducto: { 
-        nuevaImagen: File | null; 
-        nombre: string; 
-        descripcion: string; 
-        precio: string; 
-        costo: string; 
-        stock: string; 
-        id_categoria: string; 
-    }) => {
-        setLoading(true);
+  // Columnas para la tabla
+  const columns: GridColDef[] = [
+    { 
+      field: "id_producto", 
+      headerName: "ID", 
+      width: 70,
+      align: 'center',
+      headerAlign: 'center' 
+    },
+    {
+      field: "imagen",
+      headerName: "Imagen",
+      width: 100,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const imageUrl = params.value 
+          ? params.value.startsWith('http') 
+            ? params.value 
+            : params.value.startsWith('/uploads/') 
+              ? `${API_BASE_URL}${params.value}`
+              : `${IMAGE_BASE_URL}${params.value.replace(/^\/uploads\//, '')}`
+          : null;
         
-        try {
-            // Procesar imagen si hay una nueva
-            let rutaImagen = "";
-            
-            if (nuevoProducto.nuevaImagen) {
-                const formData = new FormData();
-                // Añadir el archivo usando 'file' como nombre de campo (como espera el servidor)
-                formData.append('file', nuevoProducto.nuevaImagen);
-                
-                const imagenResponse = await fetch(`${API_BASE_URL}/upload`, {
-                    method: 'POST',
-                    body: formData,
-                });
-                
-                const imagenData = await imagenResponse.json();
-                
-                if (imagenData.success) {
-                    // Obtener la ruta de la imagen desde la respuesta
-                    rutaImagen = imagenData.file.filename;
-                } else {
-                    alert("Error al subir la imagen: " + (imagenData.error || 'Error desconocido'));
-                    setLoading(false);
-                    return;
-                }
-            }
-            
-            // Preparar datos para enviar al servidor
-            const productoData = {
-                nombre: nuevoProducto.nombre,
-                descripcion: nuevoProducto.descripcion,
-                precio: parseFloat(nuevoProducto.precio),
-                costo: parseFloat(nuevoProducto.costo),
-                stock: parseInt(nuevoProducto.stock, 10),
-                imagen: rutaImagen,
-                id_categoria: parseInt(nuevoProducto.id_categoria, 10),
-                estado: 1, // Por defecto activo
-                fecha_creacion: new Date().toISOString() // Fecha actual
-            };
-            
-            console.log("Enviando datos al servidor:", productoData);
-            
-            // Enviar petición para crear el producto
-            const response = await fetch(`${API_BASE_URL}/productos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(productoData)
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                fetchProductos(); // Refrescar la lista de productos
-                alert("Producto agregado correctamente");
-                handleCloseModalAgregar(); // Cerrar el modal después de agregar
-            } else {
-                alert("Error al agregar el producto: " + (data.msg || 'Error desconocido'));
-                console.error("Respuesta del servidor:", data);
-            }
-        } catch (error) {
-            console.error("Error al agregar producto:", error);
-            alert("Error al agregar el producto: " + (error instanceof Error ? error.message : 'Error desconocido'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEdit = async (row: any) => {
-        setLoading(true);
-        console.log("Datos a editar:", row);
-        
-        try {
-            // Manejar imagen si hay una nueva
-            let rutaImagen = row.imagen;
-            
-            if (row.nuevaImagen) {
-                const formData = new FormData();
-                formData.append('file', row.nuevaImagen);
-                
-                const imagenResponse = await fetch(`${API_BASE_URL}/upload`, {
-                    method: 'POST',
-                    body: formData,
-                });
-                
-                const imagenData = await imagenResponse.json();
-                
-                if (imagenData.success) {
-                    rutaImagen = imagenData.file.filename;
-                } else {
-                    alert("Error al subir la imagen: " + (imagenData.error || 'Error desconocido'));
-                    setLoading(false);
-                    return;
-                }
-            }
-            
-            // Preparar datos para actualizar el producto
-            const dataToUpdate = {
-                nombre: row.nombre,
-                descripcion: row.descripcion,
-                precio: parseFloat(row.precio), 
-                costo: parseFloat(row.costo),   
-                stock: parseInt(row.stock, 10),  
-                imagen: rutaImagen,
-                id_categoria: parseInt(row.id_categoria, 10),
-                estado: 1, // Mantener activo
-                fecha_creacion: new Date().toISOString() // Actualizar fecha de modificación
-            };
-            
-            console.log("Datos formateados para actualización:", dataToUpdate);
-            
-            // Enviar petición para actualizar el producto
-            const response = await fetch(`${API_BASE_URL}/productos/${row.id_producto}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataToUpdate)
-            });
-            
-            const data = await response.json();
-    
-            if (data.success) {
-                fetchProductos(); // Refrescar la lista de productos
-                alert("Producto actualizado correctamente");
-            } else {
-                alert("Error al actualizar el producto: " + (data.msg || 'Error desconocido'));
-            }
-        } catch (error) {
-            console.error("Error al editar:", error);
-            alert("Error al actualizar el Producto: " + (error instanceof Error ? error.message : 'Error desconocido'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        const confirmarEliminar = window.confirm("¿Estás seguro que deseas eliminar este producto?");
-
-        if (confirmarEliminar) {
-            setLoading(true);
-            try {
-                const response = await fetch(`${API_BASE_URL}/productos/${id}`, {
-                    method: 'DELETE',
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Refrescar la lista completa en lugar de solo filtrar localmente
-                    fetchProductos();
-                    alert("Producto eliminado correctamente");
-                } else {
-                    alert("Error al eliminar el Producto: " + (data.msg || 'Error desconocido'));
-                }
-            } catch (error) {
-                console.error("Error al eliminar:", error);
-                alert("Error al eliminar el Producto: " + (error instanceof Error ? error.message : 'Error desconocido'));
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
-    return (
-        <>
-            <h1>Productos de StarBucks</h1>
-
-            <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<AddIcon />} 
-                onClick={handleAgregarProducto}
-                sx={{ mb: 2 }}
-                disabled={loading}
-            >
-                Agregar Producto
-            </Button>
-
-            {loading && (
-                <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-                    <CircularProgress />
-                </div>
+        return (
+          <Box 
+            sx={{ 
+              width: 50, 
+              height: 50, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}
+          >
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={params.row.nombre || 'Producto'}
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '100%', 
+                  objectFit: 'contain',
+                  borderRadius: '4px'
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/uploads/default.png`;
+                }}
+                loading="lazy"
+              />
+            ) : (
+              <Box 
+                sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  bgcolor: 'grey.200', 
+                  borderRadius: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  N/A
+                </Typography>
+              </Box>
             )}
+          </Box>
+        );
+      }
+    },
+    { 
+      field: "nombre", 
+      headerName: "Nombre", 
+      width: isMobile ? 120 : 200,
+      flex: 1 
+    },
+    { 
+      field: "descripcion", 
+      headerName: "Descripción", 
+      width: isMobile ? 150 : 300,
+      flex: 1.5,
+      renderCell: (params) => (
+        <div style={{ 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          whiteSpace: 'nowrap',
+          width: '100%'
+        }}>
+          {params.value}
+        </div>
+      )
+    },
+    { 
+      field: "tipoProducto", 
+      headerName: "Categoría", 
+      width: 120,
+      flex: 0.8 
+    },
+    { 
+        field: "precio", 
+        headerName: "Precio", 
+        width: 100,
+        align: 'right',
+        headerAlign: 'right',
+        type: 'number',
+        renderCell: (params) => {
+          const valor = params.row.precio;
+          if (valor == null) return '';
+          return `$${Number(valor).toFixed(2)}`;
+        }
+      },
+      { 
+        field: "costo", 
+        headerName: "Costo", 
+        width: 100,
+        align: 'right',
+        headerAlign: 'right',
+        type: 'number',
+        renderCell: (params) => {
+          const valor = params.row.costo;
+          if (valor == null) return '';
+          return `$${Number(valor).toFixed(2)}`;
+        }
+      },
+    { 
+      field: "stock", 
+      headerName: "Stock", 
+      width: 90,
+      align: 'right',
+      headerAlign: 'right',
+      type: 'number'
+    }
+  ];
 
-            <Grid2 container spacing={2} marginTop={5}>
-                <Grid2 size={12}>
-                    <DinamicTable
-                        rows={dataUsers}
-                        columns={columns}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                    />
-                </Grid2>
-            </Grid2>
+  // Funciones para el manejo del modal de agregar
+  const handleAgregarProducto = () => {
+    setModalAgregarOpen(true);
+  };
 
-            <ModalAgregarProducto
-                open={modalAgregarOpen}
-                onClose={handleCloseModalAgregar}
-                onGuardar={handleGuardarNuevoProducto}
-                categorias={categorias}
-            />
-        </>
-    );
+  const handleCloseModalAgregar = () => {
+    setModalAgregarOpen(false);
+  };
+
+  // Función para subir una imagen
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const imagenResponse = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!imagenResponse.ok) {
+      throw new Error(`Error al subir imagen: ${imagenResponse.status}`);
+    }
+    
+    const imagenData = await imagenResponse.json();
+    
+    if (!imagenData.success) {
+      throw new Error(`Error en respuesta: ${imagenData.error || 'Error desconocido'}`);
+    }
+    
+    return imagenData.file.path || `/uploads/${imagenData.file.filename}`;
+  };
+
+  // Guardar nuevo producto
+  const handleGuardarNuevoProducto = async (nuevoProducto: any) => {
+    setLoading(true);
+    
+    try {
+      // Procesar imagen si hay una nueva
+      let rutaImagen = "";
+      
+      if (nuevoProducto.nuevaImagen) {
+        rutaImagen = await uploadImage(nuevoProducto.nuevaImagen);
+      }
+      
+      // Preparar datos para enviar al servidor
+      const productoData = {
+        nombre: nuevoProducto.nombre,
+        descripcion: nuevoProducto.descripcion,
+        precio: parseFloat(String(nuevoProducto.precio)),
+        costo: parseFloat(String(nuevoProducto.costo)),
+        stock: parseInt(String(nuevoProducto.stock), 10),
+        imagen: rutaImagen,
+        id_categoria: parseInt(String(nuevoProducto.id_categoria), 10),
+        estado: nuevoProducto.estado || 1,
+        fecha_creacion: nuevoProducto.fecha_creacion || new Date().toISOString()
+      };
+      
+      // Enviar petición para crear el producto
+      const response = await fetch(`${API_BASE_URL}/productos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productoData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        fetchProductos(); // Refrescar la lista de productos
+        showAlert("Producto agregado correctamente", "success");
+        handleCloseModalAgregar();
+      } else {
+        showAlert(`Error: ${data.msg || 'Error desconocido'}`, "error");
+      }
+    } catch (error) {
+      console.error("Error al agregar producto:", error);
+      showAlert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Editar producto existente
+  const handleEdit = async (producto: any) => {
+    setLoading(true);
+    
+    try {
+      // Manejar imagen si hay una nueva
+      let rutaImagen = producto.imagen;
+      
+      if (producto.nuevaImagen) {
+        rutaImagen = await uploadImage(producto.nuevaImagen);
+      }
+      
+      // Preparar datos para actualizar el producto
+      const dataToUpdate = {
+        nombre: producto.nombre,
+        descripcion: producto.descripcion,
+        precio: parseFloat(String(producto.precio)), 
+        costo: parseFloat(String(producto.costo)),   
+        stock: parseInt(String(producto.stock), 10),  
+        imagen: rutaImagen,
+        id_categoria: parseInt(String(producto.id_categoria), 10),
+        estado: producto.estado || 1,
+        fecha_creacion: producto.fecha_creacion || new Date().toISOString()
+      };
+      
+      // Enviar petición para actualizar el producto
+      const response = await fetch(`${API_BASE_URL}/productos/${producto.id_producto}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToUpdate)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        fetchProductos(); // Refrescar la lista de productos
+        showAlert("Producto actualizado correctamente", "success");
+      } else {
+        showAlert(`Error: ${data.msg || 'Error desconocido'}`, "error");
+      }
+    } catch (error) {
+      console.error("Error al editar:", error);
+      showAlert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Eliminar producto
+  const handleDelete = async (id: number) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/productos/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        fetchProductos(); // Refrescar la lista
+        showAlert("Producto eliminado correctamente", "success");
+      } else {
+        showAlert(`Error: ${data.msg || 'Error desconocido'}`, "error");
+      }
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+      showAlert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Container maxWidth="xl">
+      <Box sx={{ my: 4 }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 'bold',
+            color: theme.palette.primary.main,
+            textAlign: isMobile ? 'center' : 'left'
+          }}
+        >
+          Administración de Productos
+        </Typography>
+
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: isMobile ? 'center' : 'flex-start',
+          mb: 3 
+        }}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            startIcon={<AddIcon />} 
+            onClick={handleAgregarProducto}
+            disabled={loading}
+            size={isMobile ? "small" : "medium"}
+          >
+            Agregar Producto
+          </Button>
+        </Box>
+
+        {loading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        <DinamicTable
+          rows={productos}
+          columns={columns}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
+          categorias={categorias}
+          title="Catálogo de Productos"
+        />
+      </Box>
+
+      <ModalAgregarProducto
+        open={modalAgregarOpen}
+        onClose={handleCloseModalAgregar}
+        onGuardar={handleGuardarNuevoProducto}
+        categorias={categorias}
+        requiereImagen={false}
+      />
+
+      <Snackbar 
+        open={alert.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseAlert} 
+          severity={alert.severity} 
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
+    </Container>
+  );
 }
