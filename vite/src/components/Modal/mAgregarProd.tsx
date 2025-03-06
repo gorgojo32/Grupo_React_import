@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  TextField, 
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
   Button,
   Box,
   Typography,
@@ -21,7 +21,7 @@ interface ModalAgregarProductoProps {
   open: boolean;
   onClose: () => void;
   onGuardar: (nuevoProducto: any) => void;
-  categorias: Array<{id_categoria: number, nombre: string}>;
+  categorias: Array<{ id_categoria: number, nombre: string }>;
 }
 interface NuevoProducto {
   nombre: string;
@@ -34,11 +34,11 @@ interface NuevoProducto {
   nuevaImagen: File | null;
 }
 
-const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({ 
-  open, 
-  onClose, 
-  onGuardar, 
-  categorias = [] 
+const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
+  open,
+  onClose,
+  onGuardar,
+  categorias = []
 }) => {
   const [nuevoProducto, setNuevoProducto] = React.useState<NuevoProducto>({
     nombre: '',
@@ -50,7 +50,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
     id_categoria: 1,
     nuevaImagen: null
   });
-  
+
   const [imagenPreview, setImagenPreview] = React.useState<string | null>(null);
   const [cargandoImagen, setCargandoImagen] = React.useState(false);
   const [errores, setErrores] = React.useState({
@@ -86,14 +86,21 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
 
 
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
-    const { name, value } = e.target as { name?: string; value: unknown };
+
+  const handleTextChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> |
+      React.SyntheticEvent<Element, Event>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown };
+    const name = target.name;
+    const value = target.value;
+
     if (name) {
       setNuevoProducto({
         ...nuevoProducto,
         [name]: value
       });
-      
+
 
       if (errores[name as keyof typeof errores]) {
         setErrores({
@@ -103,23 +110,22 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
       }
     }
   };
-  
-  // Manejar cambios en la imagen
+
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Crear URL temporal para previsualizar la imagen
+
       const fileUrl = URL.createObjectURL(file);
       setImagenPreview(fileUrl);
-      
+
       setNuevoProducto({
         ...nuevoProducto,
-        nuevaImagen: file 
+        nuevaImagen: file
       });
     }
   };
 
-  // Validar formulario antes de guardar
+
   const validarFormulario = () => {
     const nuevosErrores = {
       nombre: !nuevoProducto.nombre.trim(),
@@ -127,14 +133,14 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
       costo: !nuevoProducto.costo || parseFloat(String(nuevoProducto.costo)) < 0,
       id_categoria: !nuevoProducto.id_categoria
     };
-    
+
     setErrores(nuevosErrores);
-    
-    // Retorna true si no hay errores
+
+
     return !Object.values(nuevosErrores).some(error => error);
   };
 
-  // Guardar el nuevo producto
+
   const handleGuardar = () => {
     if (validarFormulario()) {
       onGuardar(nuevoProducto);
@@ -159,7 +165,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             helperText={errores.nombre ? "El nombre es obligatorio" : ""}
             required
           />
-          
+
           <TextField
             name="descripcion"
             label="Descripción"
@@ -170,7 +176,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             value={nuevoProducto.descripcion}
             onChange={handleTextChange}
           />
-          
+
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
               name="precio"
@@ -186,7 +192,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               helperText={errores.precio ? "Ingrese un precio válido" : ""}
               required
             />
-            
+
             <TextField
               name="costo"
               label="Costo"
@@ -202,7 +208,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               required
             />
           </Box>
-          
+
           <TextField
             name="stock"
             label="Stock"
@@ -211,14 +217,27 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             value={nuevoProducto.stock}
             onChange={handleTextChange}
           />
-          
+
           <FormControl fullWidth required error={errores.id_categoria}>
             <InputLabel id="categoria-label">Categoría</InputLabel>
             <Select
               labelId="categoria-label"
               name="id_categoria"
               value={nuevoProducto.id_categoria}
-              onChange={handleTextChange}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNuevoProducto({
+                  ...nuevoProducto,
+                  id_categoria: value as number
+                });
+
+                if (errores.id_categoria) {
+                  setErrores({
+                    ...errores,
+                    id_categoria: false
+                  });
+                }
+              }}
               label="Categoría"
             >
               {categorias.length > 0 ? (
@@ -237,19 +256,18 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               </Typography>
             )}
           </FormControl>
-
           {/* Vista previa de la imagen seleccionada */}
           {imagenPreview && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1">Vista previa:</Typography>
-              <img 
-                src={imagenPreview} 
-                alt="Vista previa" 
+              <img
+                src={imagenPreview}
+                alt="Vista previa"
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
               />
             </Box>
           )}
-          
+
           {/* Selector de imagen */}
           <Box sx={{ mt: 2 }}>
             <Button
