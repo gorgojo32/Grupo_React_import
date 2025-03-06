@@ -38,19 +38,22 @@ export default function Producto() {
                 setLoading(false);
             });
     };
-
     const fetchCategorias = () => {
         fetch('http://localhost:8000/categorias')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    setCategorias(data.data);
-                }
-            })
-            .catch(error => {
-                console.error('Error al obtener las categorías: ', error);
-            });
-    };
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              console.log("Categorías recibidas:", data.data);
+              
+              setCategorias(data.data);
+            } else {
+              console.error("Error en la respuesta:", data);
+            }
+          })
+          .catch(error => {
+            console.error('Error al obtener las categorías: ', error);
+          });
+      };
 
     React.useEffect(() => {
         fetchProductos();
@@ -81,7 +84,7 @@ export default function Producto() {
         { field: "stock", headerName: "Stock", width: 100 }
     ];
 
-    // Funciones para el manejo del modal de agregar
+   
     const handleAgregarProducto = () => {
         setModalAgregarOpen(true);
     };
@@ -102,8 +105,8 @@ export default function Producto() {
         setLoading(true);
         
         try {
-            // Procesar imagen si hay una nueva
-            let nombreImagen = "default.png"; // Imagen por defecto
+            
+            let nombreImagen = "default.png"; 
             
             if (nuevoProducto.nuevaImagen) {
                 const formData = new FormData();
@@ -126,7 +129,7 @@ export default function Producto() {
                 }
             }
             
-            // Preparar datos para enviar al servidor - CORREGIDO
+            
             const productoData = {
                 nombre: nuevoProducto.nombre,
                 descripcion: nuevoProducto.descripcion,
@@ -135,14 +138,14 @@ export default function Producto() {
                 stock: parseInt(nuevoProducto.stock, 10),
                 imagen: nombreImagen,
                 id_categoria: parseInt(nuevoProducto.id_categoria, 10),
-                // Añadir los campos faltantes
-                estado: 1, // Por defecto activo
-                fecha_creacion: new Date().toISOString() // Fecha actual
+               
+                estado: 1, 
+                fecha_creacion: new Date().toISOString() 
             };
             
             console.log("Enviando datos al servidor:", productoData);
             
-            // Enviar petición para crear el producto
+            
             const response = await fetch('http://localhost:8000/productos', {
                 method: 'POST',
                 headers: {
@@ -154,7 +157,7 @@ export default function Producto() {
             const data = await response.json();
             
             if (data.success) {
-                fetchProductos(); // Refrescar la lista de productos
+                fetchProductos(); 
                 alert("Producto agregado correctamente");
             } else {
                 alert("Error al agregar el producto: " + data.msg);
@@ -197,7 +200,7 @@ export default function Producto() {
                 }
             }
             
-            // Luego actualizamos 
+            // Luego actualizar 
             const dataToUpdate = {
                 nombre: row.nombre,
                 descripcion: row.descripcion,

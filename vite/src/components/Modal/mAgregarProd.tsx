@@ -21,7 +21,9 @@ interface ModalAgregarProductoProps {
   open: boolean;
   onClose: () => void;
   onGuardar: (nuevoProducto: any) => void;
-  categorias: Array<{ id_categoria: number, nombre: string }>;
+  categorias: Array<{
+    tipoProducto: React.ReactNode; id_categoria: number, nombre: string 
+}>;
 }
 interface NuevoProducto {
   nombre: string;
@@ -224,6 +226,8 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
 
           <FormControl fullWidth required error={errores.id_categoria}>
             <InputLabel id="categoria-label">Categoría</InputLabel>
+            
+
             <Select
               labelId="categoria-label"
               name="id_categoria"
@@ -247,20 +251,18 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
               {categorias.length > 0 ? (
                 categorias.map((categoria) => (
                   <MenuItem key={categoria.id_categoria} value={categoria.id_categoria}>
-                    {categoria.nombre}
+                    {categoria.tipoProducto} 
                   </MenuItem>
                 ))
               ) : (
                 <MenuItem value={1}>Categoría por defecto</MenuItem>
               )}
             </Select>
-            {errores.id_categoria && (
-              <Typography variant="caption" color="error">
-                Seleccione una categoría
-              </Typography>
-            )}
           </FormControl>
-          {/* Vista previa de la imagen seleccionada */}
+
+
+
+
           {imagenPreview && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1">Vista previa:</Typography>
@@ -272,7 +274,7 @@ const ModalAgregarProducto: React.FC<ModalAgregarProductoProps> = ({
             </Box>
           )}
 
-          {/* Selector de imagen */}
+          
           <Box sx={{ mt: 2 }}>
             <Button
               component="label"
