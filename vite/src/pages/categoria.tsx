@@ -75,7 +75,6 @@ export default function Categorias() {
             alert("Error al actualizar la Categoria");
         }
     };
-
     const handleDelete = async (id: number) => {
         console.log("Intentando eliminar usuario con ID:", id);
 

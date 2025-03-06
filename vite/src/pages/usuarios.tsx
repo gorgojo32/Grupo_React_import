@@ -11,7 +11,7 @@ const BusinessCard = () => {
       boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
       overflow: 'hidden'
     }}>
-      {/* Header */}
+      
       <div style={{
         backgroundColor: '#1a365d',
         padding: '16px',
@@ -22,13 +22,13 @@ const BusinessCard = () => {
         <p style={{ margin: '8px 0 0', fontSize: '16px' }}>Desarrollador web y abogado</p>
       </div>
       
-      {/* Content with Image */}
+
       <div style={{ 
         padding: '16px', 
         display: 'flex', 
         backgroundColor: 'white' // Fondo blanco agregado aquí
       }}>
-        {/* Image Column */}
+       
         <div style={{ 
           marginRight: '16px',
           display: 'flex',
