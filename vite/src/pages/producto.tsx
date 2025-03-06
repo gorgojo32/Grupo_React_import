@@ -56,7 +56,7 @@ export default function Producto() {
         fetchProductos();
         fetchCategorias();
     }, []);
-
+//hola
     const columns: GridColDef[] = [
         { field: "id_producto", headerName: "#", width: 70 },
         {
