@@ -11,9 +11,20 @@ interface DinamicTableProps {
     columns: GridColDef[];
     onDelete: (id: number) => void;
     onEdit: (row: any) => void;
+    categorias?: Array<{
+      id_categoria: number;
+      tipoProducto: React.ReactNode;
+      nombre?: string;
+    }>;
 }
 
-const DinamicTable: React.FC<DinamicTableProps> = ({ rows, columns, onDelete, onEdit }) => {
+const DinamicTable: React.FC<DinamicTableProps> = ({ 
+    rows, 
+    columns, 
+    onDelete, 
+    onEdit,
+    categorias = []
+}) => {
     const [tableRows, setTableRows] = React.useState<any[]>([]);
     
     const [modalOpen, setModalOpen] = React.useState(false);
@@ -85,6 +96,7 @@ const DinamicTable: React.FC<DinamicTableProps> = ({ rows, columns, onDelete, on
             onClose={handleCloseModal}
             producto={productoSeleccionado}
             onGuardar={handleGuardarEdicion}
+            categorias={categorias}
         />
         </>
     );

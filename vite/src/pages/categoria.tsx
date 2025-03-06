@@ -131,7 +131,7 @@ export default function Categorias() {
                 tipoProducto: nuevaCategoria.tipoProducto,
                 tipoDescripcion: nuevaCategoria.tipoDescripcion,
                 estado: Number(nuevaCategoria.estado),
-                fecha: nuevaCategoria.fecha_creacion
+                fecha_creacion: nuevaCategoria.fecha_creacion
             };
 
             console.log("Enviando nueva categoría:", dataToSend);
