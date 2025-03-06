@@ -18,10 +18,13 @@ export default function Categorias() {
     const [dataCategorias, setDataCategorias] = React.useState<Categoria[]>([]);
     const [modalAgregarOpen, setModalAgregarOpen] = React.useState(false);
 
+
+// Listar Categorios
+
     const fetchCategorias = () => {
         fetch('http://localhost:8000/categorias')
             .then(response => response.json())
-            .then(data => setDataCategorias(data.data.map((row: { id_categoria: any}) => ({ ...row, id: row.id_categoria }))))
+            .then(data => setDataCategorias(data.data.map((row: { id_categoria: any }) => ({ ...row, id: row.id_categoria }))))
             .catch(error => console.error('Error al obtener las Categorías:', error));
     };
 
@@ -37,19 +40,30 @@ export default function Categorias() {
             field: "estado",
             headerName: "Estado",
             width: 100,
-            renderCell: (params) => (params.value === 1 ? "Activo" : "Inactivo")
+            renderCell: (params) => (params.value === "1" ? "Activo" : "Inactivo")
         },
-        { field: "fecha_creacion", headerName: "Fecha de Creación", width: 200 },
+        //{ field: "fecha_creacion", headerName: "Fecha de Creación", width: 200 },
+        {
+            field: "fecha_creacion",
+            headerName: "Fecha de Creación",
+            width: 200,
+            renderCell: (params) => {
+              const fecha = new Date(params.value);
+              return fecha.toISOString().split("T")[0]; // Formato "YYYY-MM-DD"
+            }
+          }
     ];
+
+// Editar
 
     const handleEdit = async (row: Categoria) => {
         console.log("Datos a enviar:", row);
         try {
             const dataToUpdate = {
-                tipoProd:  row.tipoProducto, // Aceptar ambos formatos
+                tipoProducto: row.tipoProducto, // Aceptar ambos formatos
                 tipoDescripcion: row.tipoDescripcion,
                 estado: Number(row.estado),
-                fecha:  row.fecha_creacion // Aceptar ambos formatos
+                fecha_creacion: row.fecha_creacion // Aceptar ambos formatos
             };
 
             console.log("Data Formateada", dataToUpdate);
@@ -75,6 +89,8 @@ export default function Categorias() {
             alert("Error al actualizar la Categoria");
         }
     };
+
+// Eliminar
 
     const handleDelete = async (id: number) => {
         console.log("Intentando eliminar usuario con ID:", id);
@@ -102,12 +118,10 @@ export default function Categorias() {
         }
     };
 
+// Agregar
+
     const handleAgregarCategoria = () => {
         setModalAgregarOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalAgregarOpen(false);
     };
 
     const handleGuardarCategoria = async (nuevaCategoria: Categoria) => {
@@ -144,33 +158,45 @@ export default function Categorias() {
         }
     };
 
+    const handleCloseModal = () => {
+        setModalAgregarOpen(false);
+    };
+
     return (
         <>
             <h1>Categorías de Productos</h1>
-            
-            <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<AddIcon />} 
+
+            <Button
+                variant="contained"
+                color="success" // Verde
+                startIcon={<AddIcon />}
                 onClick={handleAgregarCategoria}
-                sx={{ mb: 2 }}
+                sx={{
+                    mb: 2,         // Margen inferior
+                    fontSize: "0.75rem",  // Hace el texto más pequeño
+                    padding: "4px 8px",  // Reduce el tamaño del botón
+                    display: "flex",
+                    justifyContent: "flex-end", // Alinea a la derecha en un contenedor
+                    ml: "auto" // Margen izquierdo automático para empujarlo a la derecha
+                }}
             >
                 Agregar Categoría
             </Button>
-            
+
+
             <Grid2 container spacing={2} marginTop={2}>
                 <Grid2 size={12}>
-                    <DinamicTableCtga 
-                        rows={dataCategorias} 
-                        columns={columns} 
-                        onDelete={handleDelete} 
-                        onEdit={handleEdit} 
+                    <DinamicTableCtga
+                        rows={dataCategorias}
+                        columns={columns}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
                     />
                 </Grid2>
             </Grid2>
 
             {/* Modal para agregar nueva categoría */}
-            <ModalNuevaCategoria 
+            <ModalNuevaCategoria
                 open={modalAgregarOpen}
                 onClose={handleCloseModal}
                 onGuardar={handleGuardarCategoria}

@@ -47,13 +47,13 @@ const DinamicTableCtga: React.FC<DinamicTableProps> = ({ rows, columns, onDelete
             renderCell: (params: { row: { id_categoria: number; }; }) => (
                 <div>
                     <IconButton
-                        color="primary"
+                        color="default"
                         onClick={() => handleOpenModal(params.row)}
                     >
                         <SettingsIcon />
                     </IconButton>
                     <IconButton
-                        color="error"
+                        color="inherit"
                         onClick={() => onDelete(params.row.id_categoria)}
                     >
                         <DeleteIcon />
